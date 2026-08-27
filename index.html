@@ -1179,7 +1179,7 @@ const TRIZ_PRINCIPLES = [
   {id:10, name:'预先作用', desc:'提前执行某些操作，使后续更高效或简单', examples:['软件预加载资源，减少打开延迟','预制构件缩短现场施工时间','提前和面等待发酵']},
   {id:11, name:'预先防范', desc:'提前准备备用手段，降低故障损失', examples:['云服务多区域备份','备用电源防止断电','汽车备胎应对爆胎']},
   {id:12, name:'等势', desc:'使不同部件在同一条件下工作，降低摩擦或冲突', examples:['装配线让工件保持同一工作高度','水坝船闸保持水位平衡','充电站统一电压标准']},
-  {id:13, name:'反向作用', desc:'反过来做，用相反动作解决问题', examples:['倒置瓶身让液体更容易流出',' Instead of heating, use cooling to separate','将工件固定，刀具旋转加工']},
+  {id:13, name:'反向作用', desc:'反过来做，用相反动作解决问题', examples:['倒置瓶身让液体更容易流出','用制冷替代加热来实现分离','将工件固定，刀具旋转加工']},
   {id:14, name:'曲面化', desc:'使用球体或曲面结构，提升效率与柔性', examples:['滚珠轴承用滚动降低摩擦','拱形桥梁分散压力','鼠标采用曲面贴合手型']},
   {id:15, name:'动态化', desc:'使系统或其部分具有可调节、可移动特性', examples:['可调节办公椅适应不同体型','折叠手机屏幕可大可小','可变尾翼根据车速调整角度']},
   {id:16, name:'不足或过度作用', desc:'当精确作用困难时，先略多或略少，再修正', examples:['先粗加工再精加工','喷漆先过量喷涂再打磨','浇注时略微过量后切除浇口']},
@@ -1457,6 +1457,57 @@ const CONTRADICTION_MATRIX = {
   "39-31":[35,22,18,39], "39-32":[35,28,2,24], "39-33":[1,28,7,10], "39-34":[1,32,10,25], "39-35":[1,35,28,37], "39-36":[12,17,28,24],
   "39-37":[35,18,27,2], "39-38":[5,12,35,26]
 };
+
+// 39个工程参数的关键词映射（用于演示模式对用户描述做简单识别，默认对应"运动物体"变体，仅为粗略启发式）
+const PARAM_KEYWORDS = [
+  {id:1, keywords:['重量','轻量化','减重','变轻','变重','太重']},
+  {id:3, keywords:['长度','太长','太短','加长','缩短']},
+  {id:5, keywords:['面积','占地','占用空间']},
+  {id:7, keywords:['体积','大小','尺寸','太大','太小','缩小体积']},
+  {id:9, keywords:['速度','太慢','太快','提速','加速']},
+  {id:10, keywords:['力','力量','拉力','推力']},
+  {id:11, keywords:['压力','应力']},
+  {id:12, keywords:['形状','造型','外形']},
+  {id:13, keywords:['稳定性','不稳定','稳固']},
+  {id:14, keywords:['强度','坚固','不够结实','容易断','容易坏','耐用性']},
+  {id:15, keywords:['使用寿命','续航','用的时间']},
+  {id:17, keywords:['温度','发热','散热','过热','太热','太冷']},
+  {id:18, keywords:['亮度','照度','太暗','太亮']},
+  {id:19, keywords:['能耗','耗电','功耗','耗能','费电']},
+  {id:21, keywords:['功率','马力']},
+  {id:22, keywords:['能量损失','浪费能量','效率低（能耗）']},
+  {id:23, keywords:['材料浪费','损耗','原材料浪费']},
+  {id:25, keywords:['耗时','效率低','太慢完成','时间浪费']},
+  {id:26, keywords:['数量','用量']},
+  {id:27, keywords:['可靠性','故障','容易坏掉','不可靠','稳定运行']},
+  {id:28, keywords:['测量精度','测不准']},
+  {id:29, keywords:['制造精度','加工精度','公差']},
+  {id:30, keywords:['外部干扰','污染影响','环境影响']},
+  {id:31, keywords:['有害','副作用','排放','噪音','污染']},
+  {id:32, keywords:['难以制造','生产难度','制造成本','工艺复杂']},
+  {id:33, keywords:['难用','操作复杂','上手困难','易用性','操作简单']},
+  {id:34, keywords:['难维护','维修','保养']},
+  {id:35, keywords:['适应性','通用性','兼容性']},
+  {id:36, keywords:['结构复杂','太复杂','复杂度']},
+  {id:37, keywords:['检测困难','难以测量','不好检测']},
+  {id:38, keywords:['自动化','智能化','人工操作']},
+  {id:39, keywords:['生产率','产量','效率提升']}
+];
+
+// 从用户历史描述中识别可能涉及的工程参数（返回按首次出现顺序排列的参数id，最多2个）
+function findMentionedParams(text) {
+  const hits = [];
+  for (const entry of PARAM_KEYWORDS) {
+    let earliestIdx = -1;
+    for (const kw of entry.keywords) {
+      const idx = text.indexOf(kw);
+      if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) earliestIdx = idx;
+    }
+    if (earliestIdx !== -1) hits.push({id: entry.id, idx: earliestIdx});
+  }
+  hits.sort((a, b) => a.idx - b.idx);
+  return hits.slice(0, 2).map(h => h.id);
+}
 
 // ==================== 状态管理 ====================
 let messages = [];
@@ -1920,16 +1971,39 @@ TRIZ认为，所有创新问题的本质都是矛盾。矛盾分为两类：
   }
   
   if (step === 4) {
-    // 根据问题推荐原理
-    const recommended = [1, 15, 35, 40];
+    // 尝试从用户历史描述中识别改善/恶化参数，查询经典矛盾矩阵；识别失败时给出通用原理并如实说明
+    const userText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
+    const mentioned = findMentionedParams(userText);
+    let recommended, matchNote;
+
+    if (mentioned.length === 2) {
+      const [pid, wid] = mentioned;
+      const pName = TRIZ_PARAMS.find(x => x.id === pid)?.name || pid;
+      const wName = TRIZ_PARAMS.find(x => x.id === wid)?.name || wid;
+      const key = `${pid}-${wid}`, reverseKey = `${wid}-${pid}`;
+      if (CONTRADICTION_MATRIX[key]) {
+        recommended = CONTRADICTION_MATRIX[key];
+        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"（关键词自动识别，仅供参考，建议到右侧"矛盾矩阵"面板手动确认），查询经典矛盾矩阵推荐：`;
+      } else if (CONTRADICTION_MATRIX[reverseKey]) {
+        recommended = CONTRADICTION_MATRIX[reverseKey];
+        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"（关键词自动识别，仅供参考）。该方向未被经典矩阵收录，以下为交换改善/恶化后的反向组合结果，仅供参考：`;
+      } else {
+        recommended = [1, 10, 15, 35];
+        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"，但该组合在经典矛盾矩阵中为空（Altshuller未给出推荐），以下为通用启发式推荐，并非矩阵查询结果：`;
+      }
+    } else {
+      recommended = [1, 15, 35, 40];
+      matchNote = `暂未能从你的描述中自动识别出具体的工程参数，以下为通用发明原理。建议使用右侧"矛盾矩阵"面板手动选择你的改善/恶化参数，可获得更精确的匹配：`;
+    }
+
     const principleNames = recommended.map(id => {
       const p = TRIZ_PRINCIPLES.find(x => x.id === id);
       return p ? `**${id}. ${p.name}**` : id;
     }).join('、');
-    
+
     return `## 【第五步：发明原理推荐】
 
-根据你的矛盾分析，TRIZ矛盾矩阵推荐以下发明原理：
+${matchNote}
 
 ### 🎯 推荐原理：${principleNames}
 
