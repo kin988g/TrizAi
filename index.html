@@ -1458,55 +1458,80 @@ const CONTRADICTION_MATRIX = {
   "39-37":[35,18,27,2], "39-38":[5,12,35,26]
 };
 
-// 39个工程参数的关键词映射（用于演示模式对用户描述做简单识别，默认对应"运动物体"变体，仅为粗略启发式）
+// 39个工程参数的关键词映射（用于演示模式对用户描述做粗略识别，仅为启发式，不是语义理解）。
+// staticId：TRIZ将"运动物体/静止物体"分为不同参数，当描述中出现静止语境时改用该id。
 const PARAM_KEYWORDS = [
-  {id:1, keywords:['重量','轻量化','减重','变轻','变重','太重']},
-  {id:3, keywords:['长度','太长','太短','加长','缩短']},
-  {id:5, keywords:['面积','占地','占用空间']},
-  {id:7, keywords:['体积','大小','尺寸','太大','太小','缩小体积']},
-  {id:9, keywords:['速度','太慢','太快','提速','加速']},
-  {id:10, keywords:['力','力量','拉力','推力']},
-  {id:11, keywords:['压力','应力']},
-  {id:12, keywords:['形状','造型','外形']},
-  {id:13, keywords:['稳定性','不稳定','稳固']},
-  {id:14, keywords:['强度','坚固','不够结实','容易断','容易坏','耐用性']},
-  {id:15, keywords:['使用寿命','续航','用的时间']},
-  {id:17, keywords:['温度','发热','散热','过热','太热','太冷']},
-  {id:18, keywords:['亮度','照度','太暗','太亮']},
-  {id:19, keywords:['能耗','耗电','功耗','耗能','费电']},
-  {id:21, keywords:['功率','马力']},
-  {id:22, keywords:['能量损失','浪费能量','效率低（能耗）']},
-  {id:23, keywords:['材料浪费','损耗','原材料浪费']},
-  {id:25, keywords:['耗时','效率低','太慢完成','时间浪费']},
-  {id:26, keywords:['数量','用量']},
-  {id:27, keywords:['可靠性','故障','容易坏掉','不可靠','稳定运行']},
-  {id:28, keywords:['测量精度','测不准']},
-  {id:29, keywords:['制造精度','加工精度','公差']},
-  {id:30, keywords:['外部干扰','污染影响','环境影响']},
-  {id:31, keywords:['有害','副作用','排放','噪音','污染']},
-  {id:32, keywords:['难以制造','生产难度','制造成本','工艺复杂']},
-  {id:33, keywords:['难用','操作复杂','上手困难','易用性','操作简单']},
-  {id:34, keywords:['难维护','维修','保养']},
-  {id:35, keywords:['适应性','通用性','兼容性']},
-  {id:36, keywords:['结构复杂','太复杂','复杂度']},
-  {id:37, keywords:['检测困难','难以测量','不好检测']},
-  {id:38, keywords:['自动化','智能化','人工操作']},
-  {id:39, keywords:['生产率','产量','效率提升']}
+  {id:1, staticId:2, keywords:['重量','轻量化','减重','变轻','变重','太重','太沉','份量']},
+  {id:3, staticId:4, keywords:['长度','太长','太短','加长','缩短']},
+  {id:5, staticId:6, keywords:['面积','占地','占用空间','表面积']},
+  {id:7, staticId:8, keywords:['体积','尺寸','缩小体积','占地方','外形太大']},
+  {id:9, keywords:['速度','太慢','太快','提速','加速','运行速度','响应慢']},
+  {id:10, keywords:['力量','拉力','推力','作用力','受力','扭矩']},
+  {id:11, keywords:['压力','应力','压强']},
+  {id:12, keywords:['形状','造型','外形','外观形状']},
+  {id:13, keywords:['稳定性','不稳定','稳固','晃动','松动']},
+  {id:14, keywords:['强度','坚固','不够结实','容易断','容易碎','易损','耐用性','结实']},
+  {id:15, staticId:16, keywords:['使用寿命','续航','工作时长','耐久','用不了多久']},
+  {id:17, keywords:['温度','发热','散热','过热','太热','太冷','高温','低温']},
+  {id:18, keywords:['亮度','照度','太暗','太亮','光照']},
+  {id:19, staticId:20, keywords:['能耗','耗电','功耗','耗能','费电','电池消耗']},
+  {id:21, keywords:['功率','马力','输出功率']},
+  {id:22, keywords:['能量损失','浪费能量','热损失','能量浪费']},
+  {id:23, keywords:['材料浪费','损耗','原材料浪费','物料浪费','废料']},
+  {id:24, keywords:['信息丢失','数据丢失','信息损失','信号丢失']},
+  {id:25, keywords:['耗时','时间浪费','等待时间','周期长','工期']},
+  {id:26, keywords:['物质数量','用量','材料用量']},
+  {id:27, keywords:['可靠性','故障','容易坏','不可靠','稳定运行','出问题','宕机']},
+  {id:28, keywords:['测量精度','测不准','检测精度']},
+  {id:29, keywords:['制造精度','加工精度','公差','装配精度']},
+  {id:30, keywords:['外部干扰','环境影响','外界影响','受环境影响','外部有害']},
+  {id:31, keywords:['有害','副作用','排放','噪音','噪声','污染','发出异味']},
+  {id:32, keywords:['难以制造','生产难度','制造成本','工艺复杂','不好加工','可制造性']},
+  {id:33, keywords:['难用','操作复杂','上手困难','易用性','操作简单','不好用','学习成本']},
+  {id:34, keywords:['难维护','维修','保养','可维修','换件']},
+  {id:35, keywords:['适应性','通用性','兼容性','适配']},
+  {id:36, keywords:['结构复杂','太复杂','复杂度','零件多']},
+  {id:37, keywords:['检测困难','难以测量','不好检测','难以监控']},
+  {id:38, keywords:['自动化','智能化','人工操作','人工干预','自动']},
+  {id:39, keywords:['生产率','产量','产能','效率提升','吞吐']}
 ];
 
-// 从用户历史描述中识别可能涉及的工程参数（返回按首次出现顺序排列的参数id，最多2个）
+// 否定/排除语境词：出现在关键词前方近距离内时，说明用户在说"不关心这个"，不应计为矛盾参数
+const NEGATION_MARKERS = ['不','无需','不用','没有','不必','不考虑','不在乎','不担心','无所谓','别'];
+// 静止物体语境标记
+const STATIC_MARKERS = ['静止','固定','不动','静置','不运动','固定式'];
+
+// 判断某个位置的关键词是否处于否定语境中（检查前方6个字符的窗口）
+function isNegated(text, idx) {
+  const window = text.slice(Math.max(0, idx - 6), idx);
+  return NEGATION_MARKERS.some(neg => window.includes(neg));
+}
+
+// 从用户描述中识别可能涉及的工程参数（返回按出现先后排列的参数id，最多2个）
+// 注意：这是关键词启发式，无法真正理解语义，识别结果始终以"建议用户确认"的方式呈现。
 function findMentionedParams(text) {
+  const isStaticContext = STATIC_MARKERS.some(m => text.includes(m));
   const hits = [];
   for (const entry of PARAM_KEYWORDS) {
     let earliestIdx = -1;
     for (const kw of entry.keywords) {
-      const idx = text.indexOf(kw);
+      let from = 0, idx;
+      // 同一关键词可能多次出现，取第一个非否定语境的位置
+      while ((idx = text.indexOf(kw, from)) !== -1) {
+        if (!isNegated(text, idx)) break;
+        from = idx + kw.length;
+      }
       if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) earliestIdx = idx;
     }
-    if (earliestIdx !== -1) hits.push({id: entry.id, idx: earliestIdx});
+    if (earliestIdx !== -1) {
+      const id = (isStaticContext && entry.staticId) ? entry.staticId : entry.id;
+      hits.push({id, idx: earliestIdx});
+    }
   }
   hits.sort((a, b) => a.idx - b.idx);
-  return hits.slice(0, 2).map(h => h.id);
+  const ids = [];
+  for (const h of hits) if (!ids.includes(h.id)) ids.push(h.id);
+  return ids.slice(0, 2);
 }
 
 // ==================== 状态管理 ====================
@@ -1515,6 +1540,17 @@ let currentStep = 0;
 let isGenerating = false;
 let abortController = null;
 let welcomeElement = null; // 缓存欢迎界面元素，避免被innerHTML清空后丢失
+
+// 结构化分析状态：把六步分析的中间结论显式记录下来，供后续步骤引用，
+// 避免每一步都靠重新猜测文本得出结论（这是六步之间能真正串联的基础）。
+const EMPTY_ANALYSIS = {
+  improveParam: null,   // 改善参数id
+  worsenParam: null,    // 恶化参数id
+  paramSource: null,    // 'manual'(用户在矩阵面板手动选择) | 'keyword'(关键词自动识别)
+  principles: [],       // 已推荐的发明原理id
+  principleSource: null // 'matrix' | 'reverse' | 'heuristic' | 'generic'
+};
+let analysis = { ...EMPTY_ANALYSIS };
 let aiConfig = {
   provider: 'mock',
   baseUrl: 'http://localhost:11434/api',
@@ -1527,6 +1563,13 @@ function loadState() {
   const savedConfig = localStorage.getItem('triz_ai_config');
   if (savedConfig) aiConfig = JSON.parse(savedConfig);
   
+  const savedAnalysis = localStorage.getItem('triz_analysis');
+  if (savedAnalysis) {
+    try {
+      analysis = { ...EMPTY_ANALYSIS, ...JSON.parse(savedAnalysis) };
+    } catch { analysis = { ...EMPTY_ANALYSIS }; }
+  }
+
   const savedMessages = localStorage.getItem('triz_chat_history');
   if (savedMessages) {
     messages = JSON.parse(savedMessages);
@@ -1550,6 +1593,7 @@ function loadState() {
 function saveState() {
   localStorage.setItem('triz_chat_history', JSON.stringify(messages));
   localStorage.setItem('triz_current_step', currentStep.toString());
+  localStorage.setItem('triz_analysis', JSON.stringify(analysis));
 }
 
 function saveConfig() {
@@ -1604,10 +1648,10 @@ function sendMessage() {
   input.style.height = 'auto';
   document.getElementById('sendBtn').disabled = true;
   
-  // 基于用户问题也做一次进度智能识别
-  updateStepProgress(text, '');
-  
-  // 生成AI回复
+  // 注意：这里不再提前推进进度。
+  // 之前在发送时就先调用一次 updateStepProgress，会把 currentStep 从0推到1，
+  // 导致第一条消息的回复直接跳到"第二步IFR"，用户永远看不到"第一步问题定义"的澄清提问。
+  // 进度统一在回复生成完毕后、结合用户问题与回复内容一起更新（见 generateAIReply）。
   generateAIReply(text);
 }
 
@@ -1721,6 +1765,9 @@ async function generateAIReply(userQuestion) {
   try {
     let fullText = '';
     
+    // 演示模式下我们明确知道即将生成的是第几步，无需事后靠关键词猜测
+    const mockStepIndex = currentStep;
+
     if (aiConfig.provider === 'mock') {
       // 演示模式：使用内置规则生成回复
       fullText = generateMockReply(userQuestion);
@@ -1743,9 +1790,17 @@ async function generateAIReply(userQuestion) {
     }
     
     // 更新步骤
-    updateStepProgress(userQuestion, fullText);
+    if (aiConfig.provider === 'mock') {
+      // 演示模式是确定性的：刚刚展示的就是第 mockStepIndex+1 步，直接据此推进，
+      // 不做关键词扫描。否则每一步回复中"我们进入第X步"的预告会把进度提前带跑，
+      // 导致IFR等步骤被整段跳过。
+      currentStep = Math.min(mockStepIndex + 1, 6);
+      updateProgress();
+    } else {
+      updateStepProgress(userQuestion, fullText);
+    }
     saveState();
-    
+
   } catch (error) {
     if (error.name === 'AbortError') {
       aiMsg.content += '\n\n[已停止生成]';
@@ -1971,30 +2026,55 @@ TRIZ认为，所有创新问题的本质都是矛盾。矛盾分为两类：
   }
   
   if (step === 4) {
-    // 尝试从用户历史描述中识别改善/恶化参数，查询经典矛盾矩阵；识别失败时给出通用原理并如实说明
-    const userText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
-    const mentioned = findMentionedParams(userText);
-    let recommended, matchNote;
+    // 参数来源优先级：用户在矩阵面板手动选择 > 关键词自动识别 > 无法识别
+    // 手动选择是用户的明确意图，永远优先于猜测。
+    let pid = null, wid = null, fromManual = false;
+    if (analysis.improveParam && analysis.worsenParam && analysis.paramSource === 'manual') {
+      pid = analysis.improveParam;
+      wid = analysis.worsenParam;
+      fromManual = true;
+    } else {
+      const userText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
+      const mentioned = findMentionedParams(userText);
+      if (mentioned.length === 2) [pid, wid] = mentioned;
+    }
 
-    if (mentioned.length === 2) {
-      const [pid, wid] = mentioned;
+    let recommended, matchNote, principleSource;
+
+    if (pid && wid) {
       const pName = TRIZ_PARAMS.find(x => x.id === pid)?.name || pid;
       const wName = TRIZ_PARAMS.find(x => x.id === wid)?.name || wid;
+      const pair = `改善"**${pName}**"、恶化"**${wName}**"`;
+      const origin = fromManual
+        ? `依据你在"矛盾矩阵"面板中选择的参数——${pair}`
+        : `从你的描述中识别到可能的矛盾——${pair}（关键词自动识别，仅供参考，建议到右侧"矛盾矩阵"面板确认）`;
       const key = `${pid}-${wid}`, reverseKey = `${wid}-${pid}`;
       if (CONTRADICTION_MATRIX[key]) {
         recommended = CONTRADICTION_MATRIX[key];
-        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"（关键词自动识别，仅供参考，建议到右侧"矛盾矩阵"面板手动确认），查询经典矛盾矩阵推荐：`;
+        principleSource = 'matrix';
+        matchNote = `${origin}，查询经典矛盾矩阵推荐：`;
       } else if (CONTRADICTION_MATRIX[reverseKey]) {
         recommended = CONTRADICTION_MATRIX[reverseKey];
-        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"（关键词自动识别，仅供参考）。该方向未被经典矩阵收录，以下为交换改善/恶化后的反向组合结果，仅供参考：`;
+        principleSource = 'reverse';
+        matchNote = `${origin}。该方向未被经典矩阵收录，以下为交换改善/恶化后的反向组合结果，矩阵本身不对称，仅供参考：`;
       } else {
         recommended = [1, 10, 15, 35];
-        matchNote = `从你的描述中识别到可能的矛盾——改善"**${pName}**"、恶化"**${wName}**"，但该组合在经典矛盾矩阵中为空（Altshuller未给出推荐），以下为通用启发式推荐，并非矩阵查询结果：`;
+        principleSource = 'heuristic';
+        matchNote = `${origin}，但该组合在经典矛盾矩阵中为空（Altshuller未给出推荐），以下为通用启发式推荐，并非矩阵查询结果：`;
       }
     } else {
       recommended = [1, 15, 35, 40];
+      principleSource = 'generic';
       matchNote = `暂未能从你的描述中自动识别出具体的工程参数，以下为通用发明原理。建议使用右侧"矛盾矩阵"面板手动选择你的改善/恶化参数，可获得更精确的匹配：`;
     }
+
+    // 记录本步结论，供第六步引用（六步串联的关键）
+    analysis.improveParam = pid;
+    analysis.worsenParam = wid;
+    if (pid && !fromManual) analysis.paramSource = 'keyword';
+    analysis.principles = recommended;
+    analysis.principleSource = principleSource;
+    saveState();
 
     const principleNames = recommended.map(id => {
       const p = TRIZ_PRINCIPLES.find(x => x.id === id);
@@ -2030,54 +2110,78 @@ ${recommended.map(id => {
 告诉我你的想法，我们进入最后一步——生成具体的解决方案。`;
   }
   
+  // ===== 第六步：基于前面各步实际得出的结论生成方案，而不是套用通用模板 =====
+  const firstProblem = messages.find(m => m.role === 'user')?.content || '（未记录）';
+  const impName = analysis.improveParam ? (TRIZ_PARAMS.find(x => x.id === analysis.improveParam)?.name) : null;
+  const worName = analysis.worsenParam ? (TRIZ_PARAMS.find(x => x.id === analysis.worsenParam)?.name) : null;
+  const chosen = (analysis.principles && analysis.principles.length) ? analysis.principles : [1, 15, 35, 40];
+
+  const contradictionLine = (impName && worName)
+    ? `改善「${impName}」时「${worName}」会恶化`
+    : '尚未明确到具体的工程参数（建议回到第4步用矛盾矩阵面板确认）';
+
+  // 标签本身不带括号，避免在下方句子中被再次套上括号形成嵌套
+  const sourceLabel = {
+    matrix: 'Altshuller经典矛盾矩阵直接命中',
+    reverse: '矩阵反向组合，仅供参考',
+    heuristic: '通用启发式，该矩阵单元格为空',
+    generic: '通用推荐，未识别出具体参数'
+  }[analysis.principleSource] || '通用推荐';
+
+  // 每个推荐原理生成一个具体的方案方向，把抽象原理转成对用户系统的追问
+  const directions = chosen.map((id, i) => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    if (!p) return '';
+    return `#### 方向${i + 1}：运用原理 ${id}「${p.name}」
+**原理含义：** ${p.desc}
+**可借鉴的案例：** ${p.examples.slice(0, 2).join('；')}
+**落到你的系统上，请自问：**
+- 你的系统中，哪个部件或哪个环节最适合用"${p.name}"的方式处理？
+- 这样改造后，「${impName || '你想改善的指标'}」能提升多少？「${worName || '担心恶化的指标'}」是否真的被规避了？
+- 实现它需要付出什么代价（成本、工艺、可靠性）？是否仍然满足第2步定义的IFR？`;
+  }).filter(Boolean).join('\n\n');
+
+  const caveat = (analysis.principleSource === 'matrix')
+    ? ''
+    : `\n> ⚠️ 注意：本次推荐来源为「${sourceLabel}」，并非经典矩阵对该矛盾的直接命中结果，请结合实际情况判断，必要时回到第4步重新确认参数。\n`;
+
   return `## 【第六步：解决方案生成】
 
-太棒了！经过完整的TRIZ六步分析，我们现在来生成具体的解决方案。
+经过完整的TRIZ六步分析，我们把前面的结论收敛为可执行的方案方向。
 
 ---
 
 ### 📋 分析回顾
-- **问题：** ${messages[0]?.content || '已定义'}
-- **IFR目标：** 已明确理想最终结果
-- **核心矛盾：** 已识别并分析
-- **推荐原理：** 已匹配相关发明原理
-
+- **原始问题：** ${firstProblem}
+- **核心矛盾：** ${contradictionLine}
+- **推荐原理：** ${chosen.map(id => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    return p ? `${id}.${p.name}` : id;
+  }).join('、')}（${sourceLabel}）
+${caveat}
 ---
 
 ### 💡 解决方案方向
 
-#### 方案一：基于核心原理的直接应用
-**思路：** 将最匹配的发明原理直接应用到技术系统中，通过结构或参数的改变解决矛盾。
-**实施建议：**
-1. 识别系统中可以改变的组件
-2. 按照发明原理的方向进行改造
-3. 评估改造后的效果和副作用
+${directions}
 
-#### 方案二：组合多原理的创新方案
-**思路：** 组合2-3个发明原理，形成更全面的解决方案。
-**实施建议：**
-1. 确定主要原理和辅助原理
-2. 设计各原理的应用点
-3. 整合为一个完整的技术方案
+---
 
-#### 方案三：向超系统/子系统转移
-**思路：** 将矛盾转移到系统的其他层级，或利用超系统资源解决。
-**实施建议：**
-1. 分析超系统中有哪些可用资源
-2. 考虑将部分功能转移到子系统
-3. 设计系统间的协作机制
+### 🔀 进阶：组合与转移
+- **组合原理：** 上述方向并非互斥。试着把其中2个组合起来（例如用一个解决主要矛盾、另一个补偿副作用），往往能得到更完整的方案。
+- **系统层次转移：** 如果在当前系统层面难以化解矛盾，考虑把功能上移到超系统（借用外部已有资源）或下移到子系统（改变材料/微观结构）。
 
 ---
 
 ### ✅ 下一步行动
-1. **评估方案**：哪个方案最可行？成本最低？效果最好？
-2. **细化方案**：选择一个方案，细化具体的技术实现细节
-3. **验证方案**：通过原型、仿真或实验验证方案效果
-4. **专利挖掘**：基于创新点考虑专利申请
+1. **筛选**：上述方向中，哪一个在你的成本和工艺约束下最可行？
+2. **细化**：选定后，把它落成具体的结构/参数改动方案
+3. **验证**：通过原型、仿真或实验验证效果与副作用
+4. **专利挖掘**：若形成了新的技术方案，可考虑专利布局
 
 ---
 
-需要我针对某个方案进一步细化吗？或者你想重新分析某个步骤？`;
+需要我针对某个方向进一步展开吗？或者你想回到某一步重新分析？`;
 }
 
 // 更新步骤进度（智能识别 + 轮次启发式）
@@ -2112,19 +2216,23 @@ function updateStepProgress(question, reply) {
     detectedStep = Math.max(detectedStep, 6);
   }
 
-  // ===== 基于对话轮次的启发式判断 =====
+  // ===== 基于对话轮次的温和推进 =====
+  // 说明：轮次多只能说明聊得久，不能说明分析真的做扎实了。
+  // 早期版本会在对话超过8/12轮时把进度强制跳到第5/6步，即使用户根本没讲清矛盾，
+  // 这会让人误以为已经完成了严谨分析。现在改为：轮次最多把进度往前带1步，
+  // 且封顶在第4步——进入"原理推荐/方案生成"必须由实际内容（关键词或已识别的参数）触发。
   const userMessageCount = messages.filter(m => m.role === 'user').length;
-  const roundBasedStep = Math.min(userMessageCount, 6);
-  // 轮次启发式只前进不后退，且不超过关键词识别的步骤太多
-  detectedStep = Math.max(detectedStep, Math.min(roundBasedStep, detectedStep + 2));
+  const roundBasedStep = Math.min(userMessageCount, 4);
+  detectedStep = Math.max(detectedStep, Math.min(roundBasedStep, detectedStep + 1));
 
-  // ===== 如果对话已经很长（超过8轮），默认进入方案阶段 =====
-  if (messages.length > 8 && detectedStep < 5) {
-    detectedStep = 5;
+  // 已经明确识别出改善/恶化参数时，说明矛盾分析这一步确实完成了
+  if (analysis.improveParam && analysis.worsenParam) {
+    detectedStep = Math.max(detectedStep, 4);
   }
-  if (messages.length > 12 && detectedStep < 6) {
-    detectedStep = 6;
-  }
+
+  // 一轮对话最多推进一步。AI回复中常会预告后续步骤（"接下来我们做矛盾分析…"），
+  // 若不加限制，关键词扫描会一次跨越多步，让中间步骤被跳过。
+  detectedStep = Math.min(detectedStep, currentStep + 1);
 
   currentStep = detectedStep;
   updateProgress();
@@ -2229,6 +2337,12 @@ function queryMatrix() {
     principles.innerHTML = '';
     return;
   }
+
+  // 用户手动选择的参数是明确意图，记录下来供对话中的第五步优先采用
+  analysis.improveParam = parseInt(improve);
+  analysis.worsenParam = parseInt(worsen);
+  analysis.paramSource = 'manual';
+  saveState();
 
   const key = `${improve}-${worsen}`;
   const reverseKey = `${worsen}-${improve}`;
@@ -2484,6 +2598,7 @@ function newChat() {
   if (messages.length > 0 && !confirm('确定要开始新对话吗？当前对话记录将被清空。')) return;
   messages = [];
   currentStep = 0;
+  analysis = { ...EMPTY_ANALYSIS };
   saveState();
   renderMessages();
   document.getElementById('progressBar').style.display = 'none';
