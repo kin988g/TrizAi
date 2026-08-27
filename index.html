@@ -1049,6 +1049,12 @@ body {
     <div class="panel-content">
       <!-- 发明原理Tab -->
       <div class="tab-pane active" id="tab-principles">
+        <div class="matrix-select-group" style="margin-bottom:10px;">
+          <label class="matrix-label">我所在的行业（同行业案例优先展示）</label>
+          <select class="matrix-select" id="industrySelect" onchange="setIndustry(this.value)">
+            <option value="">全部行业</option>
+          </select>
+        </div>
         <div class="search-box">
           <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" class="search-input" id="principleSearch" placeholder="搜索发明原理..." oninput="filterPrinciples()">
@@ -1253,6 +1259,135 @@ const SUB_PRINCIPLES = {
   38: ['用富氧空气替代普通空气','用纯氧替代富氧空气','用电离辐射作用于空气或氧气','使用离子化的氧','用臭氧替代离子化的氧'],
   39: ['用惰性环境替代通常环境','向物体中加入中性物质或惰性添加剂'],
   40: ['将均质材料改为复合材料（多种材料组合）']
+};
+
+// 行业案例库（对应数据库设计中的 case_study 表：industry_tag + component_type + problem + solution）
+// 面向工业制造场景的四个行业。用户选定所属行业后，同行业案例会优先展示。
+// 说明：以下为通用工程实践中的典型做法示例，用于帮助理解原理如何落地，
+// 并非取自经过验证的专利/项目案例库。接入内部真实案例时应替换或补充。
+const INDUSTRIES = ['机械加工', '汽车零部件', '家电结构', '精密仪器'];
+
+const INDUSTRY_CASES = {
+  1: [{ind:'机械加工',comp:'结构件',prob:'大型机床床身整体铸造，运输和吊装困难',sol:'改为分体式床身，现场用高强度螺栓和定位销拼装'},
+      {ind:'汽车零部件',comp:'传动件',prob:'整体式传动轴过长，高速时易共振',sol:'改为分段式传动轴，中间增加支承轴承'},
+      {ind:'家电结构',comp:'结构件',prob:'一体式空调噪音大且安装受限',sol:'分体式设计，压缩机与蒸发器分离，噪音源移到室外'}],
+  2: [{ind:'精密仪器',comp:'传动件',prob:'检测设备内置电机发热，干扰光学测量精度',sol:'把电机移到机箱外，用柔性轴传递动力，热源与光路隔离'},
+      {ind:'汽车零部件',comp:'传动件',prob:'变速箱油泵集成在壳体内，维护需整体拆解',sol:'油泵抽出为独立外置模块，可单独更换'},
+      {ind:'家电结构',comp:'结构件',prob:'吸尘器电机与集尘腔一体，噪音直接传出',sol:'分离电机腔并单独做隔声处理'}],
+  3: [{ind:'机械加工',comp:'刀具',prob:'刀具整体硬化后脆性大易崩刃',sol:'仅刃口做涂层硬化，基体保持韧性'},
+      {ind:'汽车零部件',comp:'结构件',prob:'车身整体用同种钢板，安全与轻量难以兼顾',sol:'分区选材，A/B柱用热成型钢，覆盖件用普通钢或铝'},
+      {ind:'家电结构',comp:'结构件',prob:'洗衣机内筒孔径一致，脱水与洗涤效果难兼顾',sol:'不同区域采用不同孔径与孔形'}],
+  4: [{ind:'机械加工',comp:'紧固件',prob:'对称布置的定位销导致工件可能装反',sol:'定位销改为非对称布置，物理上杜绝装错'},
+      {ind:'汽车零部件',comp:'结构件',prob:'对称胎面花纹难以兼顾排水与抓地',sol:'非对称花纹，内外侧分别优化排水和操控'},
+      {ind:'精密仪器',comp:'光学件',prob:'球面镜片存在像差',sol:'采用非对称自由曲面镜片校正'}],
+  5: [{ind:'机械加工',comp:'设备',prob:'车、铣分设备加工，多次装夹累积误差',sol:'车铣复合加工中心一次装夹完成多工序'},
+      {ind:'汽车零部件',comp:'传动件',prob:'电机、减速器、控制器分体布置占空间且线束长',sol:'集成式电驱桥三合一'},
+      {ind:'家电结构',comp:'整机',prob:'洗衣机和烘干机分别占地',sol:'洗烘一体机合并两种功能'}],
+  6: [{ind:'汽车零部件',comp:'结构件',prob:'电池包壳体只做防护，另需车身结构承载，重量翻倍',sol:'CTB电池车身一体化，壳体同时承担结构承载'},
+      {ind:'家电结构',comp:'结构件',prob:'冰箱门体功能单一',sol:'门体兼作储物架支撑与密封结构'},
+      {ind:'机械加工',comp:'夹具',prob:'夹具与冷却液导流装置分设',sol:'夹具体内开流道，兼做冷却液导流'}],
+  7: [{ind:'机械加工',comp:'刀具',prob:'多规格刀柄占用大量刀库空间',sol:'套装式嵌套收纳，小规格套入大规格'},
+      {ind:'汽车零部件',comp:'结构件',prob:'碰撞时转向管柱刺入驾驶舱',sol:'伸缩嵌套式管柱，碰撞时逐级溃缩'},
+      {ind:'精密仪器',comp:'光学件',prob:'长焦镜筒携带不便',sol:'多级伸缩镜筒，收纳时层层嵌套'}],
+  8: [{ind:'机械加工',comp:'结构件',prob:'主轴箱自重导致立柱变形和驱动负载大',sol:'配重块经钢丝绳平衡主轴箱重量'},
+      {ind:'汽车零部件',comp:'结构件',prob:'尾门笨重，开启费力',sol:'气弹簧提供反向助力'},
+      {ind:'精密仪器',comp:'结构件',prob:'精密平台自重影响测量',sol:'配重与气浮支承抵消自重'}],
+  9: [{ind:'机械加工',comp:'焊接件',prob:'焊接后工件产生收缩变形',sol:'装夹时预置反变形量，焊后回弹至设计尺寸'},
+      {ind:'汽车零部件',comp:'紧固件',prob:'螺栓在振动工况下松动',sol:'施加预紧力并使用预涂胶，抵消工作中的松动趋势'},
+      {ind:'家电结构',comp:'结构件',prob:'塑料件注塑后翘曲',sol:'模具预置反向曲率补偿'}],
+  10: [{ind:'机械加工',comp:'结构件',prob:'加工时反复找正基准，效率低',sol:'毛坯阶段预先加工出工艺基准孔和基准面'},
+       {ind:'汽车零部件',comp:'紧固件',prob:'装配现场涂胶效率低且质量不稳定',sol:'使用预涂胶螺栓，拧紧即生效'},
+       {ind:'家电结构',comp:'结构件',prob:'总装工序繁多，节拍长',sol:'预装配成模块化组件后再上总装线'}],
+  11: [{ind:'汽车零部件',comp:'结构件',prob:'爆胎导致失控风险',sol:'备胎或防爆轮胎，胎压监测提前预警'},
+       {ind:'精密仪器',comp:'电控件',prob:'突然断电导致测量数据丢失',sol:'内置UPS后备电源和自动存盘'},
+       {ind:'机械加工',comp:'刀具',prob:'刀具意外磨损导致批量废品',sol:'刀具寿命监测＋备用刀位自动换刀'}],
+  12: [{ind:'机械加工',comp:'产线',prob:'工件在工序间需反复升降，耗时耗能',sol:'各工位保持同一工作高度，工件平移流转'},
+       {ind:'汽车零部件',comp:'产线',prob:'总装时工人需弯腰或登高作业',sol:'随行升降台跟随车身，始终保持舒适作业高度'},
+       {ind:'家电结构',comp:'产线',prob:'装配线高度不一致造成搬运',sol:'等高辊道连续输送'}],
+  13: [{ind:'机械加工',comp:'设备',prob:'大型工件旋转加工困难且危险',sol:'工件固定、刀具旋转并绕工件走刀'},
+       {ind:'精密仪器',comp:'结构件',prob:'热装配可能引起材料退火和变形',sol:'改用深冷收缩装配（冷装配）'},
+       {ind:'汽车零部件',comp:'结构件',prob:'传统减振器活塞杆易受污染',sol:'倒置式减振器，杆在下筒在上'}],
+  14: [{ind:'机械加工',comp:'传动件',prob:'滑动丝杠摩擦大、效率低、易磨损',sol:'改用滚珠丝杠，滑动摩擦变滚动摩擦'},
+       {ind:'汽车零部件',comp:'结构件',prob:'直角过渡处应力集中导致开裂',sol:'增大圆角半径，用曲面平顺过渡'},
+       {ind:'家电结构',comp:'结构件',prob:'方形内胆死角难清洁',sol:'内胆改为大圆角曲面'}],
+  15: [{ind:'汽车零部件',comp:'传动件',prob:'固定气门正时无法兼顾低速扭矩与高速功率',sol:'可变气门正时VVT随工况调整'},
+       {ind:'机械加工',comp:'设备',prob:'固定进给速度在材料硬度变化时崩刃或效率低',sol:'自适应控制，按实测切削力动态调整进给'},
+       {ind:'家电结构',comp:'整机',prob:'定频压缩机频繁启停，温度波动大',sol:'变频压缩机连续调节输出'}],
+  16: [{ind:'机械加工',comp:'结构件',prob:'一次加工到最终尺寸难保证精度',sol:'粗加工留余量，再半精、精加工逐步逼近'},
+       {ind:'汽车零部件',comp:'涂装',prob:'一次喷涂难以均匀覆盖',sol:'略过量喷涂后流平，再打磨到要求'},
+       {ind:'精密仪器',comp:'结构件',prob:'镀层厚度难以精确控制',sol:'过量镀覆后精研磨至公差带'}],
+  17: [{ind:'机械加工',comp:'设备',prob:'平面刀库占地大、容量有限',sol:'改为立体链式或转塔式刀库'},
+       {ind:'汽车零部件',comp:'结构件',prob:'三轴加工无法完成复杂曲面',sol:'五轴联动加工，刀具可多角度接近'},
+       {ind:'家电结构',comp:'结构件',prob:'单层储物空间利用率低',sol:'多层抽屉式立体分区'}],
+  18: [{ind:'机械加工',comp:'刀具',prob:'难加工材料切削力大、刀具磨损快',sol:'超声辅助切削，降低平均切削力'},
+       {ind:'精密仪器',comp:'清洗',prob:'细小盲孔和缝隙难以清洁',sol:'超声波清洗，空化作用深入缝隙'},
+       {ind:'汽车零部件',comp:'结构件',prob:'焊接件残余应力导致后续变形',sol:'振动时效替代热时效，消除残余应力'}],
+  19: [{ind:'机械加工',comp:'刀具',prob:'深孔钻削排屑不畅，刀具卡死',sol:'啄式钻孔，进给与退刀交替进行'},
+       {ind:'汽车零部件',comp:'电控件',prob:'小雨时连续雨刮刮擦干玻璃',sol:'间歇雨刮模式，按雨量调整周期'},
+       {ind:'家电结构',comp:'整机',prob:'连续喷淋耗水量大',sol:'脉冲间歇喷淋，利用停顿期浸泡'}],
+  20: [{ind:'机械加工',comp:'设备',prob:'装卸工件时机床停机等待',sol:'双工作台交换，加工与装卸并行'},
+       {ind:'汽车零部件',comp:'模具',prob:'单工序冲压需多次转运和定位',sol:'级进模连续冲压，一次走料完成全部工序'},
+       {ind:'家电结构',comp:'产线',prob:'批次生产存在换线空档',sol:'柔性流水线连续混线生产'}],
+  21: [{ind:'机械加工',comp:'刀具',prob:'常规切削热量传入工件导致热变形',sol:'高速切削，热量随切屑快速带走'},
+       {ind:'汽车零部件',comp:'焊接件',prob:'常规焊接热影响区大、变形明显',sol:'激光焊接快速通过，热影响区极小'},
+       {ind:'精密仪器',comp:'结构件',prob:'长时间热处理导致晶粒粗大',sol:'快速感应加热淬火，缩短高温停留'}],
+  22: [{ind:'汽车零部件',comp:'动力件',prob:'发动机废气能量白白排放',sol:'涡轮增压器回收废气能量压缩进气'},
+       {ind:'机械加工',comp:'物料',prob:'切屑作为废料处理增加成本',sol:'切屑压块回收重熔，或作为磨料再利用'},
+       {ind:'家电结构',comp:'整机',prob:'洗衣排水带走大量热量',sol:'热泵回收废水余热用于加热进水'}],
+  23: [{ind:'机械加工',comp:'电控件',prob:'开环控制存在累积定位误差',sol:'光栅尺全闭环反馈实时修正位置'},
+       {ind:'汽车零部件',comp:'电控件',prob:'固定喷油量无法适应工况变化',sol:'氧传感器反馈闭环控制空燃比'},
+       {ind:'家电结构',comp:'电控件',prob:'加热时间固定导致过热或不足',sol:'温度传感器反馈调节加热功率'}],
+  24: [{ind:'机械加工',comp:'夹具',prob:'硬爪直接夹持划伤已加工表面',sol:'加软爪或铜垫作为中介保护层'},
+       {ind:'精密仪器',comp:'检测',prob:'探头与工件之间空气层影响超声传导',sol:'涂耦合剂作为声学中介'},
+       {ind:'汽车零部件',comp:'物流',prob:'零件直接堆叠转运易磕碰',sol:'专用工装托盘作为中介承载'}],
+  25: [{ind:'机械加工',comp:'设备',prob:'人工清理切屑占用停机时间',sol:'自动排屑机持续排屑，刀具磨损自动补偿'},
+       {ind:'家电结构',comp:'整机',prob:'油烟机内部油污需人工拆洗',sol:'自清洁功能，加热融化油污自动流入油杯'},
+       {ind:'汽车零部件',comp:'传动件',prob:'轴承需定期加注润滑脂',sol:'含油自润滑轴承，材料自身释放润滑'}],
+  26: [{ind:'机械加工',comp:'工艺',prob:'真实件试装成本高、周期长',sol:'3D打印样件先行试装验证干涉'},
+       {ind:'汽车零部件',comp:'验证',prob:'实车碰撞试验昂贵且不可重复',sol:'有限元仿真与数字孪生先做虚拟碰撞'},
+       {ind:'精密仪器',comp:'检测',prob:'每次校准都需标准件实测',sol:'用标准样块和标定曲线替代重复实测'}],
+  27: [{ind:'机械加工',comp:'刀具',prob:'整体刀具重磨成本高、周期长',sol:'可转位一次性刀片，钝了直接换刃'},
+       {ind:'家电结构',comp:'耗材',prob:'滤网清洗不彻底且费时',sol:'低成本一次性滤网定期更换'},
+       {ind:'汽车零部件',comp:'模具',prob:'试制阶段开钢模成本过高',sol:'用软模/硅胶模做小批量试制'}],
+  28: [{ind:'精密仪器',comp:'检测',prob:'接触式测量会划伤或压变形工件',sol:'激光/光学非接触测量替代探针'},
+       {ind:'汽车零部件',comp:'电控件',prob:'机械凸轮控制无法灵活调节',sol:'电磁阀电控驱动替代机械凸轮'},
+       {ind:'机械加工',comp:'夹具',prob:'机械夹紧力集中导致薄壁件变形',sol:'电永磁吸盘均匀吸附，夹紧力分布均匀'}],
+  29: [{ind:'机械加工',comp:'夹具',prob:'螺旋夹紧受力不均导致工件变形',sol:'液压夹具多点同步均匀夹紧'},
+       {ind:'汽车零部件',comp:'结构件',prob:'制动踏板力过大',sol:'真空助力器用气压差放大踏板力'},
+       {ind:'家电结构',comp:'结构件',prob:'柜门关闭撞击噪音大',sol:'液压阻尼铰链缓冲'}],
+  30: [{ind:'家电结构',comp:'保温件',prob:'传统发泡保温层厚，占用内胆空间',sol:'真空绝热板VIP，薄膜封装实现更薄更好的保温'},
+       {ind:'汽车零部件',comp:'安全件',prob:'刚性防护结构占空间且平时无用',sol:'安全气囊平时折叠收纳，碰撞时瞬时展开'},
+       {ind:'精密仪器',comp:'防护件',prob:'刚性防尘罩妨碍运动部件',sol:'柔性风琴罩随运动伸缩并防尘'}],
+  31: [{ind:'汽车零部件',comp:'结构件',prob:'实心结构吸能差且重',sol:'泡沫铝多孔结构，压溃吸能同时减重'},
+       {ind:'家电结构',comp:'降噪件',prob:'压缩机噪音向外辐射',sol:'多孔吸音棉包覆，孔隙耗散声能'},
+       {ind:'机械加工',comp:'夹具',prob:'薄片工件难以夹持',sol:'多孔陶瓷真空吸盘，通过微孔均匀吸附'}],
+  32: [{ind:'机械加工',comp:'检验',prob:'配合面接触状况无法直观判断',sol:'涂红丹检验接触斑点，按着色分布判断'},
+       {ind:'汽车零部件',comp:'检测',prob:'零件是否曾经过热无法事后判断',sol:'温变示温漆，超温后颜色不可逆变化'},
+       {ind:'精密仪器',comp:'结构件',prob:'密闭腔体内部状态不可见',sol:'局部改用透明视窗观察'}],
+  33: [{ind:'汽车零部件',comp:'结构件',prob:'多材料混用导致回收时分拣困难',sol:'同族材料设计，如全铝车身便于整体回收'},
+       {ind:'精密仪器',comp:'结构件',prob:'不同膨胀系数材料配合，温度变化引起漂移',sol:'配对件选用膨胀系数一致的材料'},
+       {ind:'机械加工',comp:'焊接件',prob:'焊材与母材性能差异导致焊缝开裂',sol:'选用与母材成分相近的焊材'}],
+  34: [{ind:'机械加工',comp:'工艺',prob:'3D打印复杂内腔的支撑难以去除',sol:'可溶性支撑材料，成型后浸泡溶解即可去除'},
+       {ind:'汽车零部件',comp:'安全件',prob:'碰撞能量需要被吸收',sol:'溃缩吸能盒一次性变形吸能后整体更换'},
+       {ind:'家电结构',comp:'耗材',prob:'过滤功能随使用衰减',sol:'模块化可更换滤芯，定期再生系统性能'}],
+  35: [{ind:'机械加工',comp:'工艺',prob:'常温下材料塑性差难以成型',sol:'加热到再结晶温度以上热锻成型'},
+       {ind:'汽车零部件',comp:'结构件',prob:'零件硬度和耐磨性不足',sol:'深冷处理促进残余奥氏体转变，提高硬度'},
+       {ind:'家电结构',comp:'保温件',prob:'保温层强度与导热难以兼顾',sol:'调整发泡密度，在不同区域取不同值'}],
+  36: [{ind:'家电结构',comp:'散热件',prob:'大功率器件局部热点难以扩散',sol:'热管内工质相变循环，等效导热率极高'},
+       {ind:'汽车零部件',comp:'电池件',prob:'电池温度波动影响寿命与安全',sol:'相变材料PCM在设定温度吸放热，抑制温升'},
+       {ind:'精密仪器',comp:'温控件',prob:'需要无振动无电磁干扰的制冷',sol:'干冰升华制冷，无机械运动部件'}],
+  37: [{ind:'机械加工',comp:'装配',prob:'过盈配合压装易划伤配合面',sol:'加热外圈热装配，冷却后自然紧固'},
+       {ind:'汽车零部件',comp:'电控件',prob:'需要简单可靠的温度开关',sol:'双金属片受热弯曲实现通断'},
+       {ind:'家电结构',comp:'控制件',prob:'制冷剂流量需随负荷自动调节',sol:'热力膨胀阀感温包受热膨胀驱动阀芯'}],
+  38: [{ind:'家电结构',comp:'净化件',prob:'常规过滤无法杀灭细菌',sol:'臭氧发生器强氧化除菌除味'},
+       {ind:'机械加工',comp:'热处理',prob:'常规空气燃烧炉温上升慢、效率低',sol:'富氧燃烧提高火焰温度和燃烧效率'},
+       {ind:'精密仪器',comp:'表面处理',prob:'有机残留物用溶剂难以彻底清除',sol:'等离子体/离子化氧处理，氧化分解有机污染'}],
+  39: [{ind:'机械加工',comp:'焊接件',prob:'焊接时熔池氧化产生夹渣和气孔',sol:'氩弧焊惰性气体保护熔池'},
+       {ind:'家电结构',comp:'保温件',prob:'气体对流传热导致保温效果差',sol:'抽真空隔绝对流与传导'},
+       {ind:'精密仪器',comp:'工艺',prob:'高温工艺中材料表面氧化',sol:'氮气吹扫置换腔体内氧气'}],
+  40: [{ind:'汽车零部件',comp:'传动件',prob:'钢制传动轴重且临界转速低',sol:'碳纤维复合材料传动轴，兼顾轻量与刚度'},
+       {ind:'机械加工',comp:'刀具',prob:'高速钢刀具红硬性不足',sol:'硬质合金（碳化钨+钴粘结相）复合材料刀具'},
+       {ind:'家电结构',comp:'结构件',prob:'纯塑料件刚度不足易变形',sol:'玻纤增强塑料，兼顾成型性与刚度'}]
 };
 
 // 39个工程参数
@@ -1597,6 +1732,22 @@ const EMPTY_ANALYSIS = {
   principleSource: null // 'matrix' | 'reverse' | 'heuristic' | 'generic'
 };
 let analysis = { ...EMPTY_ANALYSIS };
+let userIndustry = ''; // 空字符串表示"全部行业"
+
+// 取某个原理的行业案例，用户所属行业的案例排在最前
+function getCasesFor(principleId) {
+  const cases = INDUSTRY_CASES[principleId] || [];
+  if (!userIndustry) return cases;
+  return [...cases].sort((a, b) =>
+    (b.ind === userIndustry ? 1 : 0) - (a.ind === userIndustry ? 1 : 0));
+}
+
+function setIndustry(value) {
+  userIndustry = value;
+  localStorage.setItem('triz_industry', value);
+  renderPrinciples();
+  showToast(value ? `已优先展示「${value}」行业案例` : '已显示全部行业案例', 'success');
+}
 let aiConfig = {
   provider: 'mock',
   baseUrl: 'http://localhost:11434/api',
@@ -1609,6 +1760,12 @@ function loadState() {
   const savedConfig = localStorage.getItem('triz_ai_config');
   if (savedConfig) aiConfig = JSON.parse(savedConfig);
   
+  userIndustry = localStorage.getItem('triz_industry') || '';
+  const industrySelect = document.getElementById('industrySelect');
+  industrySelect.innerHTML = '<option value="">全部行业</option>' +
+    INDUSTRIES.map(i => `<option value="${i}">${i}</option>`).join('');
+  industrySelect.value = userIndustry;
+
   const savedAnalysis = localStorage.getItem('triz_analysis');
   if (savedAnalysis) {
     try {
@@ -2144,10 +2301,13 @@ ${recommended.map(id => {
   const subList = subs.length
     ? `**具体做法（子原理）：**\n${subs.map(s => `- ${s}`).join('\n')}\n`
     : '';
+  const c = getCasesFor(id)[0];
+  const caseLine = c
+    ? `**参考案例［${c.ind}·${c.comp}］：** ${c.prob} → ${c.sol}\n`
+    : `**参考案例：** ${p.examples[0]}\n`;
   return `#### ${id}. ${p.name}
 **核心思想：** ${p.desc}
-${subList}**参考案例：** ${p.examples[0]}
-`;
+${subList}${caseLine}`;
 }).join('\n')}
 
 ---
@@ -2188,7 +2348,12 @@ ${subList}**参考案例：** ${p.examples[0]}
       : '';
     return `#### 方向${i + 1}：运用原理 ${id}「${p.name}」
 **原理含义：** ${p.desc}
-${subList}**可借鉴的案例：** ${p.examples.slice(0, 2).join('；')}
+${subList}${(() => {
+      const cs = getCasesFor(id).slice(0, 2);
+      return cs.length
+        ? `**可借鉴的行业案例：**\n${cs.map(c => `- ［${c.ind}·${c.comp}］${c.prob} → ${c.sol}`).join('\n')}\n`
+        : `**可借鉴的案例：** ${p.examples.slice(0, 2).join('；')}\n`;
+    })()}
 **落到你的系统上，请自问：**
 - 上面哪一条具体做法，在你的系统中最有可能落地？对应改造哪个部件或环节？
 - 这样改造后，「${impName || '你想改善的指标'}」改善了多少？「${worName || '担心恶化的指标'}」是否真的没有变差？
@@ -2450,7 +2615,25 @@ function showPrincipleDetail(id) {
     </div>
     ${subSection}
     <div class="modal-section">
-      <div class="modal-section-title">典型案例</div>
+      <div class="modal-section-title">行业案例${
+        !userIndustry ? ''
+          : (INDUSTRY_CASES[p.id] || []).some(c => c.ind === userIndustry)
+            ? `（${userIndustry}优先）`
+            : `（本原理暂无${userIndustry}案例，展示其他行业）`
+      }</div>
+      <ul class="modal-examples">
+        ${getCasesFor(p.id).map(c => `<li>
+          <strong>［${c.ind}·${c.comp}］</strong><br>
+          <span style="color:var(--text-muted);">问题：</span>${c.prob}<br>
+          <span style="color:var(--text-muted);">方案：</span>${c.sol}
+        </li>`).join('')}
+      </ul>
+      <div style="font-size:11px;color:var(--text-light);margin-top:6px;line-height:1.5;">
+        以上为通用工程实践中的典型做法示例，用于说明原理如何落地，非取自已验证的专利/项目案例库。
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">通用案例</div>
       <ul class="modal-examples">
         ${p.examples.map(e => `<li>${e}</li>`).join('')}
       </ul>
