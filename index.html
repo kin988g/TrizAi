@@ -348,7 +348,10 @@ body {
   padding: 2px 0;
 }
 
-.typing-indicator span {
+/* 只作用于圆点，必须排除提示文字：
+   提示文字同样是 span，若被这条规则命中会被强制成 7x7 的方框，
+   文字溢出后就会压在圆点上。 */
+.typing-indicator span:not(.typing-hint) {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -357,8 +360,8 @@ body {
   flex-shrink: 0; /* 不参与压缩，否则圆点会被挤扁 */
 }
 
-.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+.typing-indicator span:not(.typing-hint):nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator span:not(.typing-hint):nth-child(3) { animation-delay: 0.3s; }
 
 @keyframes typingBounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -370,11 +373,7 @@ body {
   color: var(--text-muted);
   margin-left: 8px;
   white-space: nowrap; /* 气泡很窄，不加会被逐字换行成竖排 */
-  animation: none;     /* 不要继承圆点的跳动动画 */
-  width: auto;
-  height: auto;
-  background: none;
-  border-radius: 0;
+  flex-shrink: 0;
 }
 
 /* 用户上翻查看历史时出现的"回到底部"按钮 */
