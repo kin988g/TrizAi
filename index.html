@@ -586,13 +586,14 @@ body {
 
 .panel-tabs {
   display: flex;
+  flex-wrap: wrap; /* 标签超过3个后自动换行，避免在340px宽的面板里被挤压 */
   padding: 0 12px;
   border-bottom: 1px solid var(--border-light);
-  gap: 4px;
+  gap: 2px 4px;
 }
 
 .panel-tab {
-  padding: 10px 12px;
+  padding: 10px 10px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
@@ -800,6 +801,110 @@ body {
   border-radius: 20px;
   font-size: 11px;
   font-weight: 500;
+}
+
+/* ===== 求解工具面板 ===== */
+.ariz-block {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  background: var(--bg-card);
+}
+
+.ariz-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.ariz-block-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.ariz-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 8px;
+  color: #166534;
+  display: none;
+}
+
+.ariz-hint.show { display: block; }
+
+.resource-group { margin-bottom: 10px; }
+
+.resource-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.resource-group-hint {
+  font-size: 10px;
+  color: var(--text-light);
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.resource-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.resource-item:hover { background: var(--bg-hover); }
+.resource-item input { margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+
+.separation-option {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.separation-option:hover { border-color: var(--primary); background: var(--bg-hover); }
+
+.separation-option.selected {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.separation-q { font-size: 12px; line-height: 1.6; }
+
+.separation-example {
+  font-size: 10.5px;
+  color: var(--text-light);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.effect-card {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+
+.effect-name { font-size: 12.5px; font-weight: 600; margin-bottom: 3px; }
+.effect-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+.effect-use {
+  font-size: 11px;
+  color: var(--primary);
+  margin-top: 4px;
+  line-height: 1.5;
 }
 
 /* 详情弹窗 */
@@ -1129,6 +1234,8 @@ body {
       <div class="panel-tab active" onclick="switchTab('principles')">40发明原理</div>
       <div class="panel-tab" onclick="switchTab('params')">39工程参数</div>
       <div class="panel-tab" onclick="switchTab('matrix')">矛盾矩阵</div>
+      <div class="panel-tab" onclick="switchTab('ariz')">求解工具</div>
+      <div class="panel-tab" onclick="switchTab('effects')">效应库</div>
     </div>
 
     <div class="panel-content">
@@ -1175,7 +1282,74 @@ body {
         </div>
         <div style="font-size:11px;color:var(--text-light);line-height:1.6;padding:8px;">
           <strong>使用说明：</strong>选择你想改善的工程参数和因此会恶化的参数，系统会查询Altshuller经典矛盾矩阵推荐的发明原理；若该组合未被经典矩阵收录，会明确提示并给出启发式建议。点击原理标签可查看详情。
+          <br><br><strong>⚠ 关于矩阵的定位：</strong>矛盾矩阵是Altshuller早期的工具，属于统计归纳，颗粒度较粗。
+          真正的求解主力是"求解工具"标签页里的<strong>操作区/操作时间定位、资源分析、分离原理</strong>——
+          建议先用那些工具，矩阵作为补充参考。
         </div>
+      </div>
+
+      <!-- 求解工具Tab：ARIZ中真正承担求解职责的三件工具 -->
+      <div class="tab-pane" id="tab-ariz">
+        <!-- ① 操作区 / 操作时间 -->
+        <div class="ariz-block">
+          <div class="ariz-block-title">📍 操作区 / 操作时间</div>
+          <div class="ariz-block-desc">
+            矛盾不发生在整个系统上，它集中在特定部位、特定时刻。缩小范围后，
+            往往会发现并不需要整个系统都满足那个苛刻要求——矛盾因此消失。
+          </div>
+          <label class="matrix-label">矛盾发生在哪个部位？（越具体越好）</label>
+          <input type="text" class="settings-input" id="operZoneInput"
+                 placeholder="例：边角R5圆角处约30mm范围" oninput="saveOperField()">
+          <label class="matrix-label" style="margin-top:8px;">发生在什么时刻/工况？</label>
+          <input type="text" class="settings-input" id="operTimeInput"
+                 placeholder="例：跌落接触地面后的前20毫秒" oninput="saveOperField()">
+          <div class="ariz-hint" id="operHint"></div>
+        </div>
+
+        <!-- ② 资源分析 -->
+        <div class="ariz-block">
+          <div class="ariz-block-title">🧰 资源分析</div>
+          <div class="ariz-block-desc">
+            IFR要求"不增加成本、不增加复杂性"地实现功能，唯一出路是动用<strong>已经存在</strong>的资源。
+            勾选你的系统里确实可用的项，第六步生成方案时会优先考虑它们。
+          </div>
+          <div id="resourceList"></div>
+          <div class="ariz-hint" id="resourceHint"></div>
+        </div>
+
+        <!-- ③ 物理矛盾分离原理求解器 -->
+        <div class="ariz-block">
+          <div class="ariz-block-title">✂️ 物理矛盾：分离原理求解</div>
+          <div class="ariz-block-desc">
+            当同一个参数需要同时满足两个相反要求时，回答下面的问题，
+            工具会判断该用哪种分离方式，并给出对应的发明原理。
+          </div>
+          <div id="separationList"></div>
+          <div class="matrix-result" id="separationResult" style="display:none;">
+            <div class="matrix-result-title" id="separationTitle"></div>
+            <div id="separationBody"></div>
+            <div class="matrix-principles" id="separationPrinciples" style="margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 效应库Tab -->
+      <div class="tab-pane" id="tab-effects">
+        <div class="ariz-block-desc" style="margin-bottom:10px;">
+          按<strong>你想实现的功能</strong>查找可用的物理/化学/几何效应。
+          矛盾矩阵告诉你"往哪个方向想"，效应库直接告诉你"用什么去实现"。
+        </div>
+        <div class="matrix-select-group">
+          <label class="matrix-label">我想实现的功能</label>
+          <select class="matrix-select" id="effectFunc" onchange="queryEffects()">
+            <option value="">请选择...</option>
+          </select>
+        </div>
+        <div class="search-box" style="margin-top:10px;">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="effectSearch" placeholder="或直接搜索效应名称/关键词..." oninput="queryEffects()">
+        </div>
+        <div id="effectsList"></div>
       </div>
     </div>
   </div>
@@ -1724,6 +1898,201 @@ const CONTRADICTION_MATRIX = {
   "39-37":[35,18,27,2], "39-38":[5,12,35,26]
 };
 
+// 物质-场资源分类（ARIZ的资源分析环节）。
+// 资源的定义是：系统内部或周围**已经存在、不需额外投入成本**的东西。
+// 之所以要清点它，是因为IFR要求"不增加成本、不增加复杂性"地实现功能——
+// 唯一的出路就是动用已有资源。跳过这一步，IFR就只是一句口号。
+const RESOURCE_TYPES = [
+  {key:'substance', name:'物质资源', hint:'系统内和周围已有的材料、零件、废料、杂质',
+   items:['工件/产品本身','夹具、工装、包装','切屑、边角料、废液等废弃物','周围的空气、水、灰尘','相邻设备的零部件']},
+  {key:'field', name:'场资源', hint:'已经存在、不必额外产生的能量与场',
+   items:['重力','运转产生的振动','摩擦热、工艺余热','电磁场、静电','气流、液流、压差','弹性势能（已压缩的弹簧等）']},
+  {key:'space', name:'空间资源', hint:'尚未被利用的空隙、表面、内腔',
+   items:['零件内部的空腔','部件之间的间隙','未使用的表面/背面','设备上方或下方空间','运输/存放时的闲置空间']},
+  {key:'time', name:'时间资源', hint:'工序之前、之中、之后的空闲时段',
+   items:['加工前的准备/预处理阶段','工序之间的等待时间','设备停机或怠速时间','运输、存放途中','产品使用间隙']},
+  {key:'info', name:'信息资源', hint:'系统已经产生、但没被利用的信号',
+   items:['温度变化','振动或噪声特征','颜色、形变、磨损痕迹','电流/电压波动','声音、气味']},
+  {key:'function', name:'功能资源', hint:'现有部件可以额外承担的功能',
+   items:['某个部件可以兼职做别的事','超系统（上下游设备、厂房）可借用','用户的动作本身可作为动力/信号']}
+];
+
+// 四大分离原理。判定规则：看两个相反要求在什么维度上可以被拆开。
+// 每条附带的原理集合是TRIZ文献中的常见归组，用于把抽象的"分离"落到可操作的原理上。
+const SEPARATION_PRINCIPLES = [
+  {key:'space', name:'空间分离', q:'两个相反的要求，出现在系统的<strong>不同部位</strong>吗？',
+   example:'例：刀具刃口要硬（耐磨），刀体要韧（抗断）——不同部位，不同要求。',
+   principles:[1,2,3,4,7,13,14,17,24,26,30]},
+  {key:'time', name:'时间分离', q:'两个相反的要求，出现在<strong>不同时刻</strong>吗？',
+   example:'例：混凝土浇筑时要流动，凝固后要坚硬——不同时刻，不同要求。',
+   principles:[9,10,11,15,16,18,19,20,21,29,34,37]},
+  {key:'condition', name:'条件分离', q:'两个相反的要求，由<strong>不同条件</strong>触发吗（温度、载荷、介质、速度…）？',
+   example:'例：安全带平时可自由拉出，急刹车时瞬间锁死——由加速度这个条件区分。',
+   principles:[28,29,31,32,35,36,38,39,40]},
+  {key:'system', name:'系统层次分离', q:'要求的冲突发生在<strong>整体与局部之间</strong>，或系统与超系统之间吗？',
+   example:'例：自行车链条整体要柔（能绕转），每一节链片却要刚（能传力）。',
+   principles:[1,5,6,12,22,23,25,27,33,40]}
+];
+
+// 效应库：按"想实现的功能"索引的物理/化学/几何效应。
+// 定位与矛盾矩阵不同——矩阵给的是"往哪个方向想"的启发，效应库给的是"用什么去实现"的确定性手段。
+// 说明：完整的效应知识库有数千条，这里收录的是工业场景中最常用的一个子集，
+// 用于快速找到可行方向；深入选型仍需查阅专业手册。
+const EFFECTS = {
+  '加热': [
+    {n:'焦耳效应', d:'电流通过电阻产生热量', u:'电加热管、热熔、电阻焊'},
+    {n:'电磁感应加热', d:'交变磁场在导体内感生涡流发热', u:'感应淬火、电磁炉、无接触加热'},
+    {n:'微波介电加热', d:'极性分子在交变电场中摩擦生热', u:'微波干燥、内部均匀加热'},
+    {n:'超声波加热', d:'高频振动经内摩擦转为热', u:'超声焊接塑料、局部加热'},
+    {n:'摩擦生热', d:'相对运动界面做功转为热', u:'搅拌摩擦焊、摩擦压力焊'},
+    {n:'放热化学反应', d:'反应过程释放热量', u:'自加热包装、化学暖贴、水泥水化'},
+    {n:'红外辐射', d:'辐射直接被表面吸收', u:'烘干固化、非接触表面加热'}
+  ],
+  '冷却': [
+    {n:'相变吸热（汽化/熔化）', d:'物质相变时吸收大量潜热', u:'蒸发冷却、冰蓄冷、喷雾降温'},
+    {n:'珀尔帖效应', d:'电流通过异种导体结点产生温差', u:'半导体制冷片、小型精密控温'},
+    {n:'焦耳-汤姆逊效应', d:'气体节流膨胀降温', u:'制冷循环、低温液化'},
+    {n:'热管', d:'内部工质相变循环，等效导热率极高', u:'CPU散热、均温板'},
+    {n:'干冰升华', d:'固态CO₂直接汽化吸热', u:'无机械运动的低温冷却、冷链'},
+    {n:'涡流管效应', d:'压缩空气在涡流管内分离出冷热两股', u:'无冷媒的局部点冷却'}
+  ],
+  '移动物体': [
+    {n:'电磁力（洛伦兹力）', d:'磁场对载流导体施力', u:'直线电机、电磁推杆、磁悬浮'},
+    {n:'压电效应（逆）', d:'施加电压使晶体产生微小形变', u:'纳米级精密定位、压电马达'},
+    {n:'气压/液压传动', d:'流体压力放大并传递力', u:'气缸、液压缸、真空吸附搬运'},
+    {n:'形状记忆合金', d:'温度变化触发相变恢复原形', u:'热驱动执行器、无电机微动作'},
+    {n:'磁流变/电流变液', d:'外场下黏度急剧变化', u:'可调阻尼器、离合器'},
+    {n:'伯努利效应', d:'高速流体产生低压区', u:'非接触式吸盘搬运易碎片材'},
+    {n:'振动输送', d:'定向振动使物料定向爬行', u:'振动送料盘、直线送料器'}
+  ],
+  '固定/锁紧': [
+    {n:'电磁吸附', d:'通电产生磁场吸持铁磁工件', u:'电磁吸盘、电永磁夹具'},
+    {n:'真空吸附', d:'内外压差把工件压向吸盘', u:'薄板/玻璃/非磁性材料装夹'},
+    {n:'热胀冷缩过盈配合', d:'加热或冷却后装配，恢复温度即锁紧', u:'热装轴承、冷缩配合'},
+    {n:'相变固定', d:'低熔点合金/冰在装夹时凝固', u:'易变形薄壁件的无应力装夹'},
+    {n:'摩擦自锁', d:'特定升角下靠摩擦维持不回退', u:'蜗轮蜗杆自锁、锥面锁紧'},
+    {n:'冻结固定', d:'水或介质冻结成固体夹持', u:'脆性/微小零件研磨装夹'}
+  ],
+  '改变形状/变硬变软': [
+    {n:'热塑成型', d:'加热到玻璃化温度以上可塑变形', u:'吸塑、热弯、注塑'},
+    {n:'超塑性', d:'特定温度和应变率下延伸率极大', u:'复杂钣金一次成型'},
+    {n:'磁流变/电流变', d:'外场下从液态变类固态（毫秒级）', u:'可控刚度支撑、自适应阻尼'},
+    {n:'光固化', d:'紫外光引发聚合瞬间固化', u:'3D打印、UV胶粘接'},
+    {n:'形状记忆聚合物', d:'受热恢复预设形状', u:'自展开结构、可回收紧固'},
+    {n:'剪切增稠液', d:'受冲击瞬间变硬', u:'柔性防护装备、缓冲结构'}
+  ],
+  '测量温度': [
+    {n:'热电效应（塞贝克）', d:'异种金属结点温差产生电动势', u:'热电偶，宽量程'},
+    {n:'热敏电阻效应', d:'电阻随温度显著变化', u:'高灵敏度小范围测温'},
+    {n:'红外辐射测温', d:'依据辐射能量推算表面温度', u:'非接触、运动物体测温'},
+    {n:'液晶/示温漆变色', d:'到达阈值温度颜色改变', u:'低成本超温指示、可视化'},
+    {n:'双金属片弯曲', d:'膨胀系数差异导致弯曲', u:'纯机械温控开关，无需供电'},
+    {n:'光纤布拉格光栅', d:'温度改变反射波长', u:'强电磁干扰环境下测温'}
+  ],
+  '测量位置/位移': [
+    {n:'电容效应', d:'极距变化导致电容变化', u:'亚微米级非接触位移测量'},
+    {n:'电涡流效应', d:'导体接近时线圈阻抗变化', u:'油污环境下的位移/转速测量'},
+    {n:'激光干涉/三角测量', d:'光程差或反射角推算距离', u:'高精度非接触测距'},
+    {n:'霍尔效应', d:'磁场使载流半导体产生横向电压', u:'位置开关、角度传感'},
+    {n:'莫尔条纹', d:'两光栅叠加放大微小位移', u:'光栅尺、高分辨率读数'},
+    {n:'超声波飞行时间', d:'依据回波时间计算距离', u:'液位、粗测距、透明物体检测'}
+  ],
+  '检测缺陷/裂纹': [
+    {n:'超声波探伤', d:'缺陷界面反射超声波', u:'内部裂纹、夹杂、焊缝检测'},
+    {n:'磁粉探伤', d:'漏磁场吸附磁粉显现缺陷', u:'铁磁材料表面及近表面裂纹'},
+    {n:'渗透探伤', d:'毛细作用把渗透液吸出显示', u:'非多孔材料的表面开口缺陷'},
+    {n:'涡流探伤', d:'缺陷改变涡流分布', u:'导电材料表面裂纹、管材检测'},
+    {n:'红外热成像', d:'缺陷处导热异常形成温度差', u:'脱粘、分层、复合材料缺陷'},
+    {n:'声发射', d:'裂纹扩展释放弹性波', u:'在役设备的实时损伤监测'},
+    {n:'X射线成像', d:'密度差异导致透射强度不同', u:'铸件气孔、内部结构检查'}
+  ],
+  '分离混合物': [
+    {n:'离心分离', d:'密度差在离心场中放大', u:'固液分离、乳浊液分层'},
+    {n:'磁分离', d:'磁性组分被磁场捕获', u:'除铁、磁性催化剂回收'},
+    {n:'静电分离', d:'带电差异使颗粒轨迹分离', u:'塑料分选、粉体除杂'},
+    {n:'浮选', d:'表面润湿性差异附着气泡上浮', u:'矿物分选、脱墨'},
+    {n:'膜分离', d:'按分子尺寸/电荷选择透过', u:'超滤、反渗透、气体分离'},
+    {n:'旋风分离', d:'惯性使颗粒被甩向壁面', u:'除尘、气固分离'},
+    {n:'蒸馏/精馏', d:'沸点差异分离组分', u:'液体混合物提纯'}
+  ],
+  '清洁表面': [
+    {n:'超声空化', d:'空化泡溃灭产生微射流', u:'盲孔、细缝的深度清洗'},
+    {n:'等离子体清洗', d:'活性粒子分解有机污染', u:'键合、镀膜前的表面活化'},
+    {n:'干冰喷射', d:'干冰粒冲击并升华，无残留', u:'模具在线清洗、精密件清洁'},
+    {n:'激光清洗', d:'脉冲激光使污染层瞬间汽化', u:'除锈、除漆、文物清洁'},
+    {n:'电解清洗', d:'电解析气剥离污垢', u:'金属件深度除油'}
+  ],
+  '减少摩擦/磨损': [
+    {n:'滚动替代滑动', d:'滚动摩擦系数远低于滑动', u:'滚珠丝杠、滚动导轨'},
+    {n:'流体动压润滑', d:'相对运动形成承载油膜', u:'滑动轴承、动压轴承'},
+    {n:'气浮/静压支承', d:'外供压力形成气膜或油膜', u:'超精密无摩擦运动平台'},
+    {n:'磁悬浮', d:'磁力承托，完全无机械接触', u:'高速主轴、磁悬浮列车'},
+    {n:'固体润滑（二硫化钼/石墨）', d:'层状结构易剪切', u:'真空、高温等不能用油的场合'},
+    {n:'超声减摩', d:'高频振动降低有效摩擦系数', u:'超声辅助拉拔、成形'}
+  ],
+  '产生振动/防振': [
+    {n:'压电振子', d:'交变电压激发高频振动', u:'超声换能器、精密驱动'},
+    {n:'磁致伸缩', d:'磁场下材料尺寸变化', u:'大功率超声、低频大力振动'},
+    {n:'共振放大', d:'激励频率接近固有频率时振幅剧增', u:'振动筛、共振破碎'},
+    {n:'动力吸振器', d:'附加质量-弹簧系统反相抵消', u:'消除特定频率振动'},
+    {n:'阻尼材料耗能', d:'黏弹性材料把振动能转为热', u:'约束阻尼层、隔振垫'},
+    {n:'主动抵消', d:'产生反相波抵消原振动/噪声', u:'主动降噪、主动隔振平台'}
+  ],
+  '吸收能量/缓冲': [
+    {n:'塑性变形吸能', d:'材料屈服过程消耗能量', u:'汽车溃缩吸能盒'},
+    {n:'多孔材料压溃', d:'孔壁逐级坍塌，力平台稳定', u:'泡沫铝、蜂窝铝吸能'},
+    {n:'黏滞阻尼', d:'流体通过节流孔耗能', u:'液压减振器、阻尼器'},
+    {n:'剪切增稠液', d:'冲击瞬间黏度激增', u:'柔性防护、防弹材料'},
+    {n:'磁流变阻尼', d:'磁场实时调节阻尼力', u:'自适应悬架、抗震支座'}
+  ],
+  '连接/粘接': [
+    {n:'扩散焊', d:'高温加压下原子互扩散', u:'异种材料、精密无变形连接'},
+    {n:'摩擦搅拌焊', d:'搅拌头摩擦使材料塑化混合', u:'铝合金固相焊，无熔池缺陷'},
+    {n:'超声波焊接', d:'高频振动使界面摩擦熔合', u:'塑料、薄金属箔连接'},
+    {n:'厌氧胶固化', d:'隔绝氧气后聚合固化', u:'螺纹锁固、圆柱面固持'},
+    {n:'热熔胶相变', d:'加热熔化、冷却固化', u:'快速贴合、可拆卸连接'},
+    {n:'过盈/热装配', d:'温差实现装配与锁紧', u:'轴与轮毂的无键连接'},
+    {n:'静电吸附', d:'静电力临时固持', u:'薄膜、晶圆的临时固定'}
+  ],
+  '改变颜色/可视化': [
+    {n:'热致变色', d:'温度阈值触发颜色改变', u:'超温报警、冷链指示'},
+    {n:'光致变色', d:'紫外照射后变色', u:'变色镜片、防伪'},
+    {n:'电致变色', d:'通电改变透光率或颜色', u:'调光玻璃、显示器件'},
+    {n:'干涉薄膜显色', d:'薄膜厚度差异产生结构色', u:'膜厚检测、防伪标识'},
+    {n:'荧光/磷光', d:'吸收激发光后发射可见光', u:'渗透探伤、泄漏检测'},
+    {n:'pH指示剂', d:'酸碱度改变分子结构显色', u:'腐蚀监测、泄漏识别'}
+  ],
+  '控制流体': [
+    {n:'表面张力/毛细作用', d:'细通道内自发输送液体', u:'微流控、芯吸结构、热管回流'},
+    {n:'电渗流', d:'电场驱动带电液体流动', u:'微泵、无机械运动输送'},
+    {n:'磁流体', d:'磁场控制磁性液体位置形状', u:'磁流体密封、旋转轴动密封'},
+    {n:'超疏水/超亲水表面', d:'改变润湿性控制液体铺展', u:'自清洁、防结冰、定向导流'},
+    {n:'空化效应', d:'低压区产生气泡并溃灭', u:'空化清洗；亦是水泵需规避的破坏源'},
+    {n:'科恩达效应', d:'流体贴附曲面流动', u:'无叶风扇、流体转向控制'}
+  ],
+  '防腐蚀/防氧化': [
+    {n:'惰性气体保护', d:'隔绝氧气避免高温氧化', u:'氩弧焊、氮气包装'},
+    {n:'阴极保护', d:'牺牲阳极或外加电流抑制腐蚀', u:'管道、船体、储罐防腐'},
+    {n:'钝化膜', d:'表面生成致密氧化膜自我保护', u:'不锈钢、铝合金阳极氧化'},
+    {n:'真空隔绝', d:'去除反应介质', u:'真空封装、真空热处理'},
+    {n:'缓蚀剂吸附', d:'分子在金属表面成膜', u:'循环水系统、酸洗防护'}
+  ],
+  '密封': [
+    {n:'磁流体密封', d:'磁场约束磁性液体形成液封', u:'旋转轴的零泄漏动密封'},
+    {n:'迷宫密封', d:'多级节流降低泄漏驱动压差', u:'高速旋转、非接触密封'},
+    {n:'膨胀密封', d:'遇水或受热膨胀填塞缝隙', u:'遇水膨胀止水条、防火封堵'},
+    {n:'弹性体自紧密封', d:'介质压力越高压紧越充分', u:'O形圈、唇形密封'},
+    {n:'相变密封', d:'低熔点材料凝固封堵', u:'临时封堵、易熔塞'}
+  ],
+  '自动化/自适应': [
+    {n:'反馈控制', d:'检测输出并回调输入', u:'闭环伺服、恒温控制'},
+    {n:'双金属片', d:'温度直接驱动机械动作', u:'无需电路的温控开关'},
+    {n:'形状记忆合金驱动', d:'温度触发形变做功', u:'自主开闭阀门、热保护'},
+    {n:'自润滑/自修复材料', d:'损伤触发微胶囊释放修复剂', u:'延长寿命、减少维护'},
+    {n:'被动式定向结构', d:'几何非对称产生定向运动', u:'棘轮效应、振动定向输送'}
+  ]
+};
+
 // 39个工程参数的关键词映射（用于演示模式对用户描述做粗略识别，仅为启发式，不是语义理解）。
 // staticId：TRIZ将"运动物体/静止物体"分为不同参数，当描述中出现静止语境时改用该id。
 const PARAM_KEYWORDS = [
@@ -1814,9 +2183,23 @@ const EMPTY_ANALYSIS = {
   worsenParam: null,    // 恶化参数id
   paramSource: null,    // 'manual'(用户在矩阵面板手动选择) | 'keyword'(关键词自动识别)
   principles: [],       // 已推荐的发明原理id
-  principleSource: null // 'matrix' | 'reverse' | 'heuristic' | 'generic'
+  principleSource: null,// 'matrix' | 'reverse' | 'heuristic' | 'generic'
+  // 操作区/操作时间：矛盾并非发生在整个系统、整个过程上，而是集中在特定部位和特定时刻。
+  // 一旦定位，很多矛盾会自行消解（只需要那一小块区域在那一瞬间满足要求）。
+  operZone: '',
+  operTime: '',
+  // 物质-场资源：IFR若不接资源清点就只是空想。这里记录用户勾选的可用资源。
+  resources: {},        // { 资源类型key: [用户勾选/填写的条目] }
+  separation: null      // 物理矛盾选定的分离方式 key
 };
-let analysis = { ...EMPTY_ANALYSIS };
+
+// 浅拷贝会让所有副本共享同一个 resources 对象和 principles 数组，
+// 新建对话时清空就会波及旧数据。用工厂函数每次生成独立实例。
+function newAnalysis() {
+  return { ...EMPTY_ANALYSIS, principles: [], resources: {} };
+}
+
+let analysis = newAnalysis();
 let userIndustry = ''; // 空字符串表示"全部行业"
 
 // 取某个原理的行业案例，用户所属行业的案例排在最前
@@ -1825,6 +2208,170 @@ function getCasesFor(principleId) {
   if (!userIndustry) return cases;
   return [...cases].sort((a, b) =>
     (b.ind === userIndustry ? 1 : 0) - (a.ind === userIndustry ? 1 : 0));
+}
+
+// ===== 操作区 / 操作时间 =====
+function saveOperField() {
+  analysis.operZone = document.getElementById('operZoneInput').value.trim();
+  analysis.operTime = document.getElementById('operTimeInput').value.trim();
+  const hint = document.getElementById('operHint');
+  if (analysis.operZone && analysis.operTime) {
+    hint.className = 'ariz-hint show';
+    hint.innerHTML = '✅ 已记录。第六步生成方案时会把范围收敛到这个部位和时刻——'
+      + '请特别检查：<strong>系统的其余部分是否根本不需要满足这个要求？</strong>';
+  } else {
+    hint.className = 'ariz-hint';
+  }
+  saveState();
+}
+
+// ===== 资源分析 =====
+function renderResources() {
+  const box = document.getElementById('resourceList');
+  box.innerHTML = RESOURCE_TYPES.map(t => `
+    <div class="resource-group">
+      <div class="resource-group-title">${t.name}</div>
+      <div class="resource-group-hint">${t.hint}</div>
+      ${t.items.map((item, i) => {
+        const checked = (analysis.resources[t.key] || []).includes(item);
+        return `<label class="resource-item">
+          <input type="checkbox" ${checked ? 'checked' : ''}
+                 onchange="toggleResource('${t.key}', ${i}, this.checked)">
+          <span>${item}</span>
+        </label>`;
+      }).join('')}
+    </div>
+  `).join('');
+  updateResourceHint();
+}
+
+function toggleResource(typeKey, itemIndex, checked) {
+  const type = RESOURCE_TYPES.find(t => t.key === typeKey);
+  if (!type) return;
+  const item = type.items[itemIndex];
+  const list = analysis.resources[typeKey] || [];
+  if (checked) {
+    if (!list.includes(item)) list.push(item);
+  } else {
+    const at = list.indexOf(item);
+    if (at !== -1) list.splice(at, 1);
+  }
+  analysis.resources[typeKey] = list;
+  updateResourceHint();
+  saveState();
+}
+
+function countResources() {
+  return Object.values(analysis.resources).reduce((n, list) => n + (list ? list.length : 0), 0);
+}
+
+function updateResourceHint() {
+  const hint = document.getElementById('resourceHint');
+  const n = countResources();
+  if (n > 0) {
+    hint.className = 'ariz-hint show';
+    hint.innerHTML = `✅ 已勾选 <strong>${n}</strong> 项可用资源，第六步会优先用它们来构造方案。`;
+  } else {
+    hint.className = 'ariz-hint';
+  }
+}
+
+// ===== 物理矛盾：分离原理求解 =====
+function renderSeparation() {
+  const box = document.getElementById('separationList');
+  box.innerHTML = SEPARATION_PRINCIPLES.map(s => `
+    <div class="separation-option ${analysis.separation === s.key ? 'selected' : ''}"
+         data-key="${s.key}" onclick="chooseSeparation('${s.key}')">
+      <div class="separation-q">${s.q}</div>
+      <div class="separation-example">${s.example}</div>
+    </div>
+  `).join('');
+  if (analysis.separation) showSeparationResult(analysis.separation);
+}
+
+function chooseSeparation(key) {
+  // 再次点击同一项则取消选择
+  analysis.separation = (analysis.separation === key) ? null : key;
+  saveState();
+  document.querySelectorAll('.separation-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.key === analysis.separation);
+  });
+  if (analysis.separation) {
+    showSeparationResult(analysis.separation);
+  } else {
+    document.getElementById('separationResult').style.display = 'none';
+  }
+}
+
+function showSeparationResult(key) {
+  const s = SEPARATION_PRINCIPLES.find(x => x.key === key);
+  if (!s) return;
+  document.getElementById('separationResult').style.display = 'block';
+  document.getElementById('separationTitle').textContent = `推荐：${s.name}`;
+  document.getElementById('separationBody').innerHTML =
+    `<div style="font-size:11.5px;line-height:1.6;color:var(--text-muted);">
+      把两个相反要求在${s.name.replace('分离', '')}维度上拆开，各自满足，矛盾即被消解。
+      以下是常与${s.name}配合使用的发明原理：
+    </div>`;
+  document.getElementById('separationPrinciples').innerHTML = s.principles.map(id => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    return `<span class="matrix-principle-tag" onclick="showPrincipleDetail(${id})" style="cursor:pointer;">${id}. ${p?.name || id}</span>`;
+  }).join('');
+}
+
+// ===== 效应库 =====
+function renderEffectFuncs() {
+  const sel = document.getElementById('effectFunc');
+  sel.innerHTML = '<option value="">请选择...</option>'
+    + Object.keys(EFFECTS).map(f => `<option value="${f}">${f}</option>`).join('');
+}
+
+function queryEffects() {
+  const func = document.getElementById('effectFunc').value;
+  const kw = document.getElementById('effectSearch').value.trim().toLowerCase();
+  const box = document.getElementById('effectsList');
+
+  // 搜索优先于分类：填了关键词就跨全部功能检索
+  let rows = [];
+  if (kw) {
+    for (const [f, list] of Object.entries(EFFECTS)) {
+      list.forEach(e => {
+        if ((e.n + e.d + e.u + f).toLowerCase().includes(kw)) rows.push({ ...e, f });
+      });
+    }
+  } else if (func) {
+    rows = EFFECTS[func].map(e => ({ ...e, f: func }));
+  } else {
+    const total = Object.values(EFFECTS).flat().length;
+    box.innerHTML = `<div style="font-size:11px;color:var(--text-light);padding:10px;line-height:1.6;">
+      共收录 ${total} 条效应，覆盖 ${Object.keys(EFFECTS).length} 类功能。<br>
+      选择上方的功能分类，或直接搜索关键词。</div>`;
+    return;
+  }
+
+  if (!rows.length) {
+    box.innerHTML = `<div style="font-size:11px;color:var(--text-light);padding:10px;">没有匹配的效应，换个关键词试试。</div>`;
+    return;
+  }
+
+  box.innerHTML = `<div style="font-size:11px;color:var(--text-light);margin:8px 0 6px;">找到 ${rows.length} 条</div>`
+    + rows.map(e => `
+      <div class="effect-card">
+        <div class="effect-name">${e.n}${kw ? `<span style="font-weight:400;color:var(--text-light);font-size:11px;"> · ${e.f}</span>` : ''}</div>
+        <div class="effect-desc">${e.d}</div>
+        <div class="effect-use">典型应用：${e.u}</div>
+      </div>`).join('');
+}
+
+function restoreOperFields() {
+  document.getElementById('operZoneInput').value = analysis.operZone || '';
+  document.getElementById('operTimeInput').value = analysis.operTime || '';
+  const hint = document.getElementById('operHint');
+  if (analysis.operZone && analysis.operTime) {
+    hint.className = 'ariz-hint show';
+    hint.innerHTML = '✅ 已记录。第六步生成方案时会把范围收敛到这个部位和时刻——'
+      + '请特别检查：<strong>系统的其余部分是否根本不需要满足这个要求？</strong>';
+  }
 }
 
 function setIndustry(value) {
@@ -1854,8 +2401,8 @@ function loadState() {
   const savedAnalysis = localStorage.getItem('triz_analysis');
   if (savedAnalysis) {
     try {
-      analysis = { ...EMPTY_ANALYSIS, ...JSON.parse(savedAnalysis) };
-    } catch { analysis = { ...EMPTY_ANALYSIS }; }
+      analysis = { ...newAnalysis(), ...JSON.parse(savedAnalysis) };
+    } catch { analysis = newAnalysis(); }
   }
 
   const savedMessages = localStorage.getItem('triz_chat_history');
@@ -1897,7 +2444,12 @@ function init() {
   renderPrinciples();
   renderParams();
   renderMatrixSelects();
+  renderEffectFuncs();
   loadState();
+  // 这三个面板依赖 analysis，必须在 loadState 之后渲染，才能回显已保存的选择
+  renderResources();
+  renderSeparation();
+  restoreOperFields();
   setupInput();
   setupScrollTracking();
   
@@ -2351,6 +2903,18 @@ IFR是指系统在**不增加复杂性、不增加成本、没有副作用**的�
 4. **能否让有害因素变成有用因素？** （变害为利原理）
 5. **能否让系统的某个子系统或超系统来承担这项功能？** （系统层次分离）
 
+---
+
+### ⚠️ 关键：IFR不做资源分析就只是空想
+
+"不增加成本、不增加复杂性"地实现功能，唯一的出路是动用系统里**已经存在、不用额外花钱**的东西。
+
+请打开右侧「**求解工具**」面板，在**资源分析**里勾选你的系统中确实可用的：
+物质（废料、现有零件）、场（重力、余热、振动）、空间（内腔、间隙）、
+时间（工序间隙、停机时段）、信息（温度变化、噪声特征）。
+
+勾选后，第六步会优先用这些资源来构造方案。
+
 请描述你心中的理想最终结果，我们将以此为目标寻找解决方案。`;
   }
   
@@ -2383,7 +2947,23 @@ TRIZ认为，所有创新问题的本质都是矛盾。矛盾分为两类：
    - 哪个参数需要同时满足相反的需求？
    - 具体的两个相反需求是什么？
 
-明确矛盾后，我们进入第四步，用TRIZ工具精准求解。`;
+---
+
+### 📍 还有两个关键问题（很多矛盾在这一步就化解了）
+
+矛盾从来不发生在整个系统、整个过程上，它集中在**特定的部位**和**特定的时刻**。
+把范围缩小之后，你往往会发现：并不需要整个系统都满足那个苛刻要求。
+
+**① 操作区：矛盾具体发生在哪个部位？**
+   越具体越好。不是"整个外壳"，而是"边角R5圆角处约30mm范围"。
+
+**② 操作时间：矛盾发生在什么时刻或什么工况下？**
+   不是"使用期间"，而是"跌落接触地面后的前20毫秒"。
+
+> 举例：如果只有边角在跌落瞬间需要高强度，那其余部分完全可以做薄——
+> 矛盾消失了，你根本不需要一种"又轻又强"的万能材料。
+
+请一并回答这两个问题，我们进入第四步求解。`;
   }
   
   if (step === 3) {
@@ -2394,18 +2974,23 @@ TRIZ认为，所有创新问题的本质都是矛盾。矛盾分为两类：
 ### 如果是技术矛盾
 我们使用**39个工程参数**和**矛盾矩阵**来定位解决方案。你可以在右侧"矛盾矩阵"标签页中选择对应的参数，系统会推荐历史上验证有效的发明原理。
 
-### 如果是物理矛盾
-我们使用**四大分离原理**来求解：
-1. **空间分离**：矛盾需求在不同空间满足
-2. **时间分离**：矛盾需求在不同时间满足
-3. **条件分离**：矛盾需求在不同条件下满足
-4. **系统层次分离**：矛盾需求在不同系统层级满足
+### 如果是物理矛盾（同一参数要同时满足相反要求）
+物理矛盾比技术矛盾更本质，也更容易彻底解决——办法是把两个相反要求**拆开**。
+
+请打开右侧「**求解工具**」面板的**分离原理求解**，回答那四个判断问题：
+两个相反要求是出现在不同**部位**、不同**时刻**、不同**条件**，还是不同**系统层次**？
+选中后会立即给出对应的发明原理集合。
+
+> 物理矛盾的求解成功率高于查矩阵，如果你的问题能表述成物理矛盾，优先走这条路。
 
 ---
 
 **请告诉我：**
 1. 你的矛盾具体是什么？（改善参数 vs 恶化参数，或相反需求）
 2. 你倾向于用哪种方式来解决这个矛盾？
+
+另外提醒：如果你还没填**操作区/操作时间**，现在补上——
+它常常比后面的任何原理都更快让矛盾消失。
 
 然后我会为你推荐最相关的发明原理。`;
   }
@@ -2537,10 +3122,75 @@ ${subList}${(() => {
         : `**可借鉴的案例：** ${p.examples.slice(0, 2).join('；')}\n`;
     })()}
 **落到你的系统上，请自问：**
-- 上面哪一条具体做法，在你的系统中最有可能落地？对应改造哪个部件或环节？
+- 上面哪一条具体做法，在你的系统中最有可能落地？对应改造哪个部件或环节？${
+  analysis.operZone ? `\n- 能否只在**${analysis.operZone}**做这个改造，而不动系统的其余部分？` : ''}
 - 这样改造后，「${impName || '你想改善的指标'}」改善了多少？「${worName || '担心恶化的指标'}」是否真的没有变差？
 - 实现它需要付出什么代价（成本、工艺、可靠性）？是否仍然满足第2步定义的IFR？`;
   }).filter(Boolean).join('\n\n');
+
+  // ===== 操作区/操作时间：把问题范围收敛 =====
+  const zoneBlock = (analysis.operZone || analysis.operTime) ? `
+### 📍 收敛后的问题范围
+
+- **操作区：** ${analysis.operZone || '（未填写）'}
+- **操作时间：** ${analysis.operTime || '（未填写）'}
+
+> **这是最省力的突破口：** 你只需要让${analysis.operZone ? `「${analysis.operZone}」` : '这个局部'}${
+  analysis.operTime ? `在「${analysis.operTime}」这一时刻` : '在关键时刻'}满足要求，
+> 系统的其余部分、其余时间**不必承担这个约束**。
+> 先检查一遍：把要求限定到这个范围后，矛盾是不是已经不存在了？
+> 如果是——你不需要下面的任何原理，问题已经解决。
+
+---
+` : `
+### 📍 提醒：你还没有定位操作区和操作时间
+
+矛盾从不发生在整个系统、整个过程上。请到右侧「求解工具」面板填写
+**矛盾发生的具体部位和时刻**——很多矛盾在这一步就自行消解了，
+因为你会发现只需要一小块区域在一瞬间满足要求。
+
+---
+`;
+
+  // ===== 资源：IFR的落地抓手 =====
+  const pickedResources = [];
+  for (const t of RESOURCE_TYPES) {
+    const list = analysis.resources[t.key] || [];
+    if (list.length) pickedResources.push(`- **${t.name}：** ${list.join('、')}`);
+  }
+  const resourceBlock = pickedResources.length ? `
+### 🧰 可动用的现成资源
+
+${pickedResources.join('\n')}
+
+> 优先用这些**已经存在、不额外花钱**的资源去构造方案——这才是IFR"零代价"的真正含义。
+> 每看一个下面的方案方向，都回头问一句：**能不能用上面某项资源来实现它？**
+
+---
+` : `
+### 🧰 提醒：尚未做资源分析
+
+IFR要求"不增加成本、不增加复杂性"地实现功能，唯一的出路是动用系统里**已经存在**的资源。
+请到右侧「求解工具」面板勾选可用的物质/场/空间/时间/信息资源，
+否则IFR只是一句口号，下面的方案也难免要靠"增加点什么"来实现。
+
+---
+`;
+
+  // ===== 物理矛盾的分离方式 =====
+  const sep = analysis.separation ? SEPARATION_PRINCIPLES.find(s => s.key === analysis.separation) : null;
+  const separationBlock = sep ? `
+### ✂️ 物理矛盾的分离方式：${sep.name}
+
+${sep.example}
+
+配合使用的原理：${sep.principles.map(id => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    return p ? `${id}.${p.name}` : id;
+  }).join('、')}
+
+---
+` : '';
 
   const caveat = (analysis.principleSource === 'matrix')
     ? ''
@@ -2561,8 +3211,11 @@ ${subList}${(() => {
   }).join('、')}（${sourceLabel}）
 ${caveat}
 ---
-
+${zoneBlock}${resourceBlock}${separationBlock}
 ### 💡 解决方案方向
+
+> 顺序提示：请**先**确认上面的操作区收敛和资源清单，再看下面的原理方向。
+> 原理是启发式工具，作用是在你穷尽了范围收敛和现有资源之后，帮你打开新思路。
 
 ${directions}
 
@@ -3027,8 +3680,11 @@ function newChat() {
   if (messages.length > 0 && !confirm('确定要开始新对话吗？当前对话记录将被清空。')) return;
   messages = [];
   currentStep = 0;
-  analysis = { ...EMPTY_ANALYSIS };
+  analysis = newAnalysis();
   saveState();
+  renderResources();
+  renderSeparation();
+  restoreOperFields();
   renderMessages();
   document.getElementById('progressBar').style.display = 'none';
   // renderMessages已处理welcome显示，这里做兜底
