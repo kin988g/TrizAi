@@ -1,0 +1,3104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRIZ 智能体 - 创新问题解决专家</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --user-bubble: #2563eb;
+  --user-bubble-text: #ffffff;
+  --ai-bubble: #f1f5f9;
+  --ai-bubble-text: #0f172a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+/* ========== 左侧对话区域 ========== */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  min-height: 56px;
+}
+
+.chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover { background: var(--primary-dark); }
+
+/* 进度指示器 */
+.progress-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  white-space: nowrap;
+  transition: all 0.3s;
+  cursor: pointer;
+  user-select: none;
+}
+
+.progress-step:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.progress-step.pending:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.progress-step.active {
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+}
+
+.progress-step.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.progress-step.pending {
+  background: var(--bg-hover);
+  color: var(--text-light);
+}
+
+.step-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.progress-step.active .step-dot { background: rgba(255,255,255,0.3); }
+.progress-step.completed .step-dot { background: #16a34a; color: white; }
+.progress-step.pending .step-dot { background: #cbd5e1; color: white; }
+
+/* 消息列表 */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  scroll-behavior: smooth;
+}
+
+.messages-container::-webkit-scrollbar { width: 6px; }
+.messages-container::-webkit-scrollbar-track { background: transparent; }
+.messages-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.messages-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.message-wrapper {
+  display: flex;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-wrapper.user { justify-content: flex-end; }
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.message-wrapper.ai .message-avatar {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  margin-right: 10px;
+}
+
+.message-wrapper.user .message-avatar {
+  background: #64748b;
+  color: white;
+  margin-left: 10px;
+}
+
+.message-bubble {
+  max-width: 75%;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  line-height: 1.6;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.message-wrapper.ai .message-bubble {
+  background: var(--ai-bubble);
+  color: var(--ai-bubble-text);
+  border-bottom-left-radius: 4px;
+}
+
+.message-wrapper.user .message-bubble {
+  background: var(--user-bubble);
+  color: var(--user-bubble-text);
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble h1, .message-bubble h2, .message-bubble h3 {
+  margin: 12px 0 8px;
+  font-weight: 600;
+}
+
+.message-bubble h2 { font-size: 16px; }
+.message-bubble h3 { font-size: 15px; }
+
+.message-bubble p { margin-bottom: 8px; }
+
+.message-bubble ul, .message-bubble ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message-bubble li { margin-bottom: 4px; }
+
+.message-bubble strong { font-weight: 600; }
+
+.message-bubble code {
+  background: rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.message-bubble pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.message-bubble pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.message-bubble blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-muted);
+}
+
+.message-bubble hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background: var(--primary);
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  vertical-align: middle;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* 等待AI首个字符到达时的三点动画 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+/* 只作用于圆点，必须排除提示文字：
+   提示文字同样是 span，若被这条规则命中会被强制成 7x7 的方框，
+   文字溢出后就会压在圆点上。 */
+.typing-indicator span:not(.typing-hint) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-light);
+  animation: typingBounce 1.2s infinite ease-in-out;
+  flex-shrink: 0; /* 不参与压缩，否则圆点会被挤扁 */
+}
+
+.typing-indicator span:not(.typing-hint):nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator span:not(.typing-hint):nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+.typing-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 8px;
+  white-space: nowrap; /* 气泡很窄，不加会被逐字换行成竖排 */
+  flex-shrink: 0;
+}
+
+/* 用户上翻查看历史时出现的"回到底部"按钮 */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 7px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.scroll-bottom-btn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.scroll-bottom-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* 消息区需要定位上下文，供"回到底部"按钮绝对定位 */
+.chat-body {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 欢迎界面 */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+}
+
+.welcome-logo {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+}
+
+.welcome-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.welcome-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 500px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.example-questions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.example-card {
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.example-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.example-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.example-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 输入区域 */
+.input-section {
+  padding: 12px 20px 16px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  transition: all 0.2s;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  max-height: 120px;
+  min-height: 24px;
+  color: var(--text);
+}
+
+.input-textarea::placeholder { color: var(--text-light); }
+
+.send-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.send-btn:hover:not(:disabled) { background: var(--primary-dark); }
+.send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* ========== 右侧知识库面板 ========== */
+.knowledge-panel {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-tabs {
+  display: flex;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border-light);
+  gap: 4px;
+}
+
+.panel-tab {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.panel-tab:hover { color: var(--text); }
+
+.panel-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.panel-content::-webkit-scrollbar { width: 6px; }
+.panel-content::-webkit-scrollbar-track { background: transparent; }
+.panel-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.panel-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* 搜索框 */
+.search-box {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  background: var(--bg);
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+}
+
+/* 原理卡片 */
+.principle-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.principle-card:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.principle-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.principle-number {
+  width: 24px;
+  height: 24px;
+  background: var(--primary);
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.principle-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.principle-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* 参数分类 */
+.param-category {
+  margin-bottom: 16px;
+}
+
+.param-category-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.param-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.param-item:hover { background: var(--bg-hover); }
+
+.param-id {
+  width: 20px;
+  height: 20px;
+  background: var(--bg-hover);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* 矛盾矩阵查询 */
+.matrix-query {
+  margin-bottom: 16px;
+}
+
+.matrix-select-group {
+  margin-bottom: 12px;
+}
+
+.matrix-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.matrix-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  background: var(--bg);
+  outline: none;
+  cursor: pointer;
+}
+
+.matrix-select:focus { border-color: var(--primary); }
+
+.matrix-result {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.matrix-result-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+
+.matrix-principles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matrix-principle-tag {
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* 详情弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.show .modal { transform: scale(1); }
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: var(--bg-hover); color: var(--text); }
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-section {
+  margin-bottom: 16px;
+}
+
+.modal-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.modal-section-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.modal-examples {
+  list-style: none;
+  padding: 0;
+}
+
+.modal-examples li {
+  padding: 6px 0 6px 20px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.modal-examples li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+}
+
+/* 设置弹窗 */
+.settings-form-group {
+  margin-bottom: 16px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.settings-input, .settings-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  background: var(--bg);
+}
+
+.settings-input:focus, .settings-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover { background: var(--bg-hover); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  background: #1e293b;
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  z-index: 2000;
+  transform: translateX(120%);
+  transition: transform 0.3s;
+  box-shadow: var(--shadow-md);
+}
+
+.toast.show { transform: translateX(0); }
+.toast.success { background: #16a34a; }
+.toast.error { background: #dc2626; }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .knowledge-panel {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 85%;
+    max-width: 360px;
+    height: 100vh;
+    z-index: 100;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+    transition: right 0.3s;
+  }
+  
+  .knowledge-panel.open { right: 0; }
+  
+  .panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+    display: none;
+  }
+  
+  .panel-overlay.show { display: block; }
+  
+  .example-questions { grid-template-columns: 1fr; }
+  
+  .message-bubble { max-width: 85%; }
+  
+  .mobile-menu-btn { display: flex !important; }
+}
+
+.mobile-menu-btn { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- 左侧对话区域 -->
+  <div class="chat-section">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="logo">TRIZ</div>
+        <div>
+          <div class="header-title">TRIZ 智能体</div>
+          <div class="header-subtitle">创新问题解决专家</div>
+        </div>
+      </div>
+      <div class="chat-header-right">
+        <button class="icon-btn mobile-menu-btn" onclick="togglePanel()" title="知识库">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+        </button>
+        <button class="icon-btn" onclick="openSettings()" title="AI设置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="exportReport()" title="导出报告">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="btn-primary" onclick="newChat()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span>新建对话</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 进度指示器 -->
+    <div class="progress-bar" id="progressBar" style="display:none;">
+      <div class="progress-step active" data-step="1" onclick="setStepManually(1)" title="点击跳转到第1步：问题定义"><span class="step-dot">1</span>问题定义</div>
+      <div class="progress-step pending" data-step="2" onclick="setStepManually(2)" title="点击跳转到第2步：IFR分析"><span class="step-dot">2</span>IFR分析</div>
+      <div class="progress-step pending" data-step="3" onclick="setStepManually(3)" title="点击跳转到第3步：矛盾识别"><span class="step-dot">3</span>矛盾识别</div>
+      <div class="progress-step pending" data-step="4" onclick="setStepManually(4)" title="点击跳转到第4步：矛盾分析"><span class="step-dot">4</span>矛盾分析</div>
+      <div class="progress-step pending" data-step="5" onclick="setStepManually(5)" title="点击跳转到第5步：原理推荐"><span class="step-dot">5</span>原理推荐</div>
+      <div class="progress-step pending" data-step="6" onclick="setStepManually(6)" title="点击跳转到第6步：方案生成"><span class="step-dot">6</span>方案生成</div>
+    </div>
+
+    <!-- 消息列表 -->
+    <div class="chat-body">
+    <div class="messages-container" id="messagesContainer">
+      <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-logo">TRIZ</div>
+        <h1 class="welcome-title">你好，我是TRIZ创新助手</h1>
+        <p class="welcome-desc">我将运用TRIZ理论（发明问题解决理论），通过六步分析法帮你系统性地解决技术难题。请描述你遇到的问题，我们开始分析。</p>
+        <div class="example-questions">
+          <div class="example-card" onclick="useExample('想设计一个更轻的笔记本电脑外壳，但又担心强度不够')">
+            <div class="example-card-title">轻量化 vs 强度</div>
+            <div class="example-card-desc">产品减重但要保证结构强度</div>
+          </div>
+          <div class="example-card" onclick="useExample('设备需要提高运行速度，但功耗和发热也会增加')">
+            <div class="example-card-title">速度 vs 功耗</div>
+            <div class="example-card-desc">提升性能同时控制能耗</div>
+          </div>
+          <div class="example-card" onclick="useExample('想让产品功能更丰富，但操作变得复杂，用户上手困难')">
+            <div class="example-card-title">功能 vs 易用性</div>
+            <div class="example-card-desc">功能丰富但保持操作简单</div>
+          </div>
+          <div class="example-card" onclick="useExample('生产线要提高自动化程度，但设备成本和维护难度也上升了')">
+            <div class="example-card-title">自动化 vs 成本</div>
+            <div class="example-card-desc">提升自动化同时控制成本</div>
+          </div>
+        </div>
+      </div>
+    </div>
+      <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="jumpToBottom()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><polyline points="19 12 12 19 5 12"/></svg>
+        <span id="scrollBottomText">回到最新</span>
+      </button>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="input-section">
+      <div class="input-wrapper">
+        <textarea class="input-textarea" id="messageInput" placeholder="描述你遇到的技术难题，按Enter发送，Shift+Enter换行..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">TRIZ智能体会通过六步分析法帮你系统性解决问题 · 对话保存在本地</div>
+    </div>
+  </div>
+
+  <!-- 右侧知识库面板 -->
+  <div class="panel-overlay" id="panelOverlay" onclick="togglePanel()"></div>
+  <div class="knowledge-panel" id="knowledgePanel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        TRIZ 知识库
+      </div>
+      <button class="icon-btn" onclick="togglePanel()" style="display:none;" id="closePanelBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="switchTab('principles')">40发明原理</div>
+      <div class="panel-tab" onclick="switchTab('params')">39工程参数</div>
+      <div class="panel-tab" onclick="switchTab('matrix')">矛盾矩阵</div>
+    </div>
+
+    <div class="panel-content">
+      <!-- 发明原理Tab -->
+      <div class="tab-pane active" id="tab-principles">
+        <div class="matrix-select-group" style="margin-bottom:10px;">
+          <label class="matrix-label">我所在的行业（同行业案例优先展示）</label>
+          <select class="matrix-select" id="industrySelect" onchange="setIndustry(this.value)">
+            <option value="">全部行业</option>
+          </select>
+        </div>
+        <div class="search-box">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="principleSearch" placeholder="搜索发明原理..." oninput="filterPrinciples()">
+        </div>
+        <div id="principlesList"></div>
+      </div>
+
+      <!-- 工程参数Tab -->
+      <div class="tab-pane" id="tab-params">
+        <div id="paramsList"></div>
+      </div>
+
+      <!-- 矛盾矩阵Tab -->
+      <div class="tab-pane" id="tab-matrix">
+        <div class="matrix-query">
+          <div class="matrix-select-group">
+            <label class="matrix-label">想改善的参数</label>
+            <select class="matrix-select" id="improveParam" onchange="queryMatrix()">
+              <option value="">请选择...</option>
+            </select>
+          </div>
+          <div class="matrix-select-group">
+            <label class="matrix-label">会恶化的参数</label>
+            <select class="matrix-select" id="worsenParam" onchange="queryMatrix()">
+              <option value="">请选择...</option>
+            </select>
+          </div>
+          <div class="matrix-result" id="matrixResult" style="display:none;">
+            <div class="matrix-result-title" id="matrixResultTitle">推荐发明原理</div>
+            <div class="matrix-principles" id="matrixPrinciples"></div>
+            <div id="matrixResultNote" style="display:none;margin-top:8px;font-size:11px;line-height:1.6;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 8px;"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-light);line-height:1.6;padding:8px;">
+          <strong>使用说明：</strong>选择你想改善的工程参数和因此会恶化的参数，系统会查询Altshuller经典矛盾矩阵推荐的发明原理；若该组合未被经典矩阵收录，会明确提示并给出启发式建议。点击原理标签可查看详情。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 原理详情弹窗 -->
+<div class="modal-overlay" id="principleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal('principleModal')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        AI 服务配置
+      </div>
+      <button class="modal-close" onclick="closeModal('settingsModal')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-form-group">
+        <label class="settings-label">AI 服务类型</label>
+        <select class="settings-select" id="settingProvider">
+          <option value="ollama">Ollama（本地模型）</option>
+          <option value="openai">OpenAI 兼容 API</option>
+          <option value="mock">演示模式（内置规则回复）</option>
+        </select>
+        <div class="settings-hint">选择 Ollama 可完全离线运行；OpenAI 兼容支持 DeepSeek、通义千问、智谱等</div>
+      </div>
+      <div class="settings-form-group" id="baseUrlGroup">
+        <label class="settings-label">API 地址</label>
+        <input type="text" class="settings-input" id="settingBaseUrl" value="http://localhost:11434/api">
+        <div class="settings-hint">Ollama默认: http://localhost:11434/api | OpenAI: https://api.openai.com/v1</div>
+      </div>
+      <div class="settings-form-group" id="apiKeyGroup" style="display:none;">
+        <label class="settings-label">API Key</label>
+        <input type="password" class="settings-input" id="settingApiKey" placeholder="sk-...">
+      </div>
+      <div class="settings-form-group" id="modelGroup">
+        <label class="settings-label">模型名称</label>
+        <input type="text" class="settings-input" id="settingModel" value="qwen2.5:7b">
+        <div class="settings-hint">Ollama示例: qwen2.5:7b / llama3.1:8b | OpenAI示例: gpt-4o-mini</div>
+      </div>
+
+      <!-- 测试连接区域 -->
+      <div class="settings-form-group" id="testGroup">
+        <label class="settings-label">连接测试</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-secondary" id="testBtn" onclick="testAIConnection()" style="flex:1;">
+            <span id="testBtnText">🔌 测试连接</span>
+          </button>
+        </div>
+        <div id="testResult" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.6;"></div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn-secondary" onclick="closeModal('settingsModal')">取消</button>
+        <button class="btn-primary" onclick="saveSettings()">保存配置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== TRIZ 知识库数据 ====================
+
+// 40个发明原理
+const TRIZ_PRINCIPLES = [
+  {id:1, name:'分割', desc:'将对象分割为独立部分，使其更灵活、更容易处理', examples:['模块化家具，可拆分组合','微服务架构，将单体应用拆分为独立服务','分体式空调，室内机和室外机分离']},
+  {id:2, name:'抽取', desc:'只保留所需部分，去掉不需要或有害部分', examples:['降噪耳机提取环境声并反向抵消','从混合信号中提取有用信息','中央空调将压缩机移至室外']},
+  {id:3, name:'局部质量', desc:'让系统不同部分具有不同性能，优化整体功能', examples:['鞋底不同区域使用不同硬度材料','键盘常用键位放大或凸起','轮胎胎面不同区域花纹不同']},
+  {id:4, name:'非对称', desc:'把对称结构改为非对称，以适应真实负载或使用方式', examples:['人体工学鼠标采用非对称曲面','扳手的偏心设计增加力矩','汽车方向盘偏置设计']},
+  {id:5, name:'合并', desc:'将多个功能或结构组合到一个系统中', examples:['打印、扫描、复印合并为一体机','智能手机集成相机、导航、支付','沙发床合并沙发和床的功能']},
+  {id:6, name:'多用性', desc:'使一个物体执行多个功能，减少部件数量', examples:['手机集成相机、导航、支付功能','瑞士军刀多种工具合一','建筑用脚手架同时作防护栏']},
+  {id:7, name:'嵌套', desc:'一个物体放进另一个物体，或多层结构', examples:['伸缩天线，节节嵌套','套娃式收纳盒','望远镜镜筒嵌套设计']},
+  {id:8, name:'反重量', desc:'用其他物体来平衡或补偿重力负担', examples:['气弹簧辅助开启汽车尾门','热气球利用浮力升空','电梯配重块平衡轿厢重量']},
+  {id:9, name:'预先反作用', desc:'在问题发生前先进行反向措施', examples:['预应力混凝土提高承载能力','预紧螺栓防止松动','疫苗提前注入抗体']},
+  {id:10, name:'预先作用', desc:'提前执行某些操作，使后续更高效或简单', examples:['软件预加载资源，减少打开延迟','预制构件缩短现场施工时间','提前和面等待发酵']},
+  {id:11, name:'预先防范', desc:'提前准备备用手段，降低故障损失', examples:['云服务多区域备份','备用电源防止断电','汽车备胎应对爆胎']},
+  {id:12, name:'等势', desc:'使不同部件在同一条件下工作，降低摩擦或冲突', examples:['装配线让工件保持同一工作高度','水坝船闸保持水位平衡','充电站统一电压标准']},
+  {id:13, name:'反向作用', desc:'反过来做，用相反动作解决问题', examples:['倒置瓶身让液体更容易流出','用制冷替代加热来实现分离','将工件固定，刀具旋转加工']},
+  {id:14, name:'曲面化', desc:'使用球体或曲面结构，提升效率与柔性', examples:['滚珠轴承用滚动降低摩擦','拱形桥梁分散压力','鼠标采用曲面贴合手型']},
+  {id:15, name:'动态化', desc:'使系统或其部分具有可调节、可移动特性', examples:['可调节办公椅适应不同体型','折叠手机屏幕可大可小','可变尾翼根据车速调整角度']},
+  {id:16, name:'不足或过度作用', desc:'当精确作用困难时，先略多或略少，再修正', examples:['先粗加工再精加工','喷漆先过量喷涂再打磨','浇注时略微过量后切除浇口']},
+  {id:17, name:'另一维度', desc:'从二维转向三维，或改变布置方向', examples:['立体仓库提高空间利用率','多层停车场增加容量','将管线从地面移至天花板']},
+  {id:18, name:'机械振动', desc:'引入振动、超声或周期性动作改善效果', examples:['超声清洗细小缝隙','振动筛分离不同颗粒','按摩椅利用振动放松肌肉']},
+  {id:19, name:'周期性作用', desc:'用间歇动作替代连续动作', examples:['脉冲喷淋节水同时保持清洁效果','闹钟间歇响铃更易唤醒','汽车雨刮间歇模式']},
+  {id:20, name:'有效作用连续性', desc:'让关键过程持续运行，减少空转和停顿', examples:['流水线连续生产减少换线等待','发动机怠速保持随时响应','24小时便利店持续营业']},
+  {id:21, name:'快速通过', desc:'让有害或危险阶段快速完成', examples:['快速热处理减少材料氧化','闪电战快速通过危险区域','高温消毒时间短减少营养破坏']},
+  {id:22, name:'变害为利', desc:'将负面因素转为有用元素或动力源', examples:['利用发动机余热给座舱供暖','将废物回收再利用','利用海浪发电']},
+  {id:23, name:'反馈', desc:'引入检测和反馈，让系统根据结果调整', examples:['恒温器根据温度自动调节加热','自动驾驶根据路况调整速度','血糖监测仪调节胰岛素注射']},
+  {id:24, name:'中介物', desc:'使用中间对象传递、隔离或转换作用', examples:['转接头连接不同接口设备','催化剂加速化学反应','货币作为商品交换媒介']},
+  {id:25, name:'自服务', desc:'让对象自己完成维护、补给或修复', examples:['自清洁滤网减少人工维护','自修复材料在受损时自动愈合','植物通过光合作用自给自足']},
+  {id:26, name:'复制', desc:'用廉价复制品、模型或图像替代原物', examples:['数字孪生用于测试设备方案','用沙盘模型研究地形','VR模拟训练替代真实场景']},
+  {id:27, name:'廉价替代品', desc:'用低成本、短寿命或一次性对象替代昂贵对象', examples:['一次性保护膜保护精密表面','纸质餐具替代金属餐具','用模拟训练替代真实飞行训练']},
+  {id:28, name:'机械系统替代', desc:'用光、电、声、磁等场替代机械接触', examples:['磁悬浮减少机械摩擦','触摸屏替代物理按键','无线充电替代物理接口']},
+  {id:29, name:'气压或液压结构', desc:'用气体或液体实现支撑、缓冲或传力', examples:['液压千斤顶放大举升力','气垫船利用气压悬浮','液压减震器吸收震动']},
+  {id:30, name:'柔性壳体或薄膜', desc:'使用薄膜、软壳或柔性边界', examples:['真空包装薄膜贴合保护产品','水球用柔性膜装水','充气帐篷用柔性材料']},
+  {id:31, name:'多孔材料', desc:'让对象带孔，或利用孔隙实现功能', examples:['泡沫材料减重并吸能','活性炭多孔结构吸附杂质','透气面料利用微孔排汗']},
+  {id:32, name:'颜色改变', desc:'改变颜色、透明度或可视标识', examples:['温变标签提示冷链状态','pH试纸颜色变化指示酸碱度','红绿灯用颜色传递信号']},
+  {id:33, name:'同质性', desc:'让相互作用对象使用相同或相近材料', examples:['同材质包装便于回收','补牙材料与牙齿热膨胀系数一致','焊接使用与母材相近的焊材']},
+  {id:34, name:'抛弃和再生', desc:'工作完成后丢弃、溶解、蒸发或恢复部件', examples:['可溶支撑材料用于3D打印复杂结构','火箭燃料燃烧后抛弃','可降解塑料自然分解']},
+  {id:35, name:'参数改变', desc:'改变温度、压力、浓度、柔性等状态参数', examples:['加热使材料变软后再成型','加压加速化学反应','调整弹性改变缓冲效果']},
+  {id:36, name:'相变', desc:'利用固液气或其他相态变化完成工作', examples:['热管通过相变高效传热','干冰升华制冷','冰蓄冷利用水凝固放热']},
+  {id:37, name:'热膨胀', desc:'利用材料热胀冷缩实现配合或驱动', examples:['热装配让金属环冷却后紧密固定','双金属片温度开关','热膨胀阀控制制冷剂流量']},
+  {id:38, name:'强氧化剂', desc:'使用富氧、臭氧或强氧化环境增强反应', examples:['臭氧用于水处理消毒','富氧燃烧提高效率','双氧水漂白']},
+  {id:39, name:'惰性环境', desc:'使用惰性气体、真空或隔离环境避免反应', examples:['氮气包装降低食品氧化','真空隔热减少热传递','惰性气体保护焊接']},
+  {id:40, name:'复合材料', desc:'组合多种材料，获得单一材料难以兼顾的性能', examples:['碳纤维复合材料兼顾轻量和强度','玻璃钢兼具强度和耐腐蚀性','混凝土加钢筋增强抗拉性']}
+];
+
+// 40个发明原理的子原理（按 Altshuller 经典体系的 a/b/c 子条目整理，共89条）。
+// 原理名称本身较抽象（"分割"到底怎么分？），子原理才是可直接落地的操作指令，
+// 因此在原理详情、第五步推荐、第六步方案中都会展示。
+const SUB_PRINCIPLES = {
+  1: ['将物体分割成相互独立的部分','使物体易于拆卸和组装','提高物体的可分割性程度（分得更细）'],
+  2: ['从物体中抽出产生负面影响的部分或属性，或只保留必需的部分或属性'],
+  3: ['将物体或外部环境的均匀结构变为不均匀','使物体的不同部分各自处于最适合其工作的条件下','使物体的每一部分承担不同的有用功能'],
+  4: ['将物体的对称形状变为不对称','若物体已不对称，则进一步提高其不对称程度'],
+  5: ['将相同或相近的物体在空间上合并，使其并行工作','使相关的操作在时间上连续或并行进行'],
+  6: ['使一个物体承担多种功能，从而省去其他物体'],
+  7: ['将一个物体置于另一个物体之中，该物体再置于第三个物体之中，依此类推','让一个物体穿过另一个物体的空腔'],
+  8: ['将物体与具有升力的其他物体结合，以补偿其重量','让物体与环境相互作用（利用空气动力、流体动力、浮力等）来补偿其重量'],
+  9: ['若某作用同时具有有益和有害效果，应预先施加反向作用以消除有害效果','预先给物体施加与工作应力方向相反的应力'],
+  10: ['预先对物体进行全部或部分的必要改变','预先将物体安放妥当，使其能在最方便的位置立即投入作用，不损失运送时间'],
+  11: ['预先准备好应急手段，以补偿物体相对较低的可靠性'],
+  12: ['在势场中限制位置变化（例如改变工作条件，避免在重力场中升高或降低物体）'],
+  13: ['用相反的动作替代原有动作（例如不加热而改用冷却）','使运动的部分变为固定，固定的部分变为运动','将物体或过程颠倒过来'],
+  14: ['用曲线、曲面、球形替代直线、平面、立方体','使用滚子、球体、螺旋结构、拱形结构','用旋转运动替代直线运动，利用离心力'],
+  15: ['使物体、外部环境或过程的特性可以调整，以在各阶段保持最优','将物体分割成可相对移动的若干部分','使原本刚性或不可变的物体变为可动、可自适应的'],
+  16: ['若难以百分之百实现所需效果，可先做得略少或略多，从而把问题大幅简化'],
+  17: ['将物体从一维移动扩展到二维或三维空间','用多层结构替代单层结构','将物体倾斜或侧置','利用给定表面的背面或另一侧'],
+  18: ['使物体产生振荡或振动','提高振动频率（直至超声频段）','利用物体的共振频率','用压电振子替代机械振子','将超声振动与电磁场振动联合使用'],
+  19: ['用周期性或脉冲性作用替代连续作用','若作用已是周期性的，则改变其周期或频率','利用脉冲间的停顿期执行另一项有用作用'],
+  20: ['使工作连续进行，让物体的各部分始终满负荷运转','消除所有空转和间歇性动作'],
+  21: ['以极高的速度完成某个过程或其中有害、危险的阶段'],
+  22: ['利用有害因素（特别是环境的有害作用）获得有益效果','将一种有害作用与另一种有害作用叠加，从而消除有害性','把有害因素放大到不再有害的程度'],
+  23: ['引入反馈以改善过程或作用','若已存在反馈，则改变其大小或影响方式'],
+  24: ['使用中介物来传递或完成作用','把物体与另一个易于去除的物体临时结合'],
+  25: ['使物体通过执行辅助功能实现自我服务','利用废弃的资源、能量或物质'],
+  26: ['用简单廉价的复制品替代不可获得、昂贵或易损的物体','用光学拷贝（图像、影像）替代物体或过程','若已使用可见光拷贝，可转用红外或紫外拷贝'],
+  27: ['用大量廉价物体替代一个昂贵物体，并在某些性能（如使用寿命）上作出折中'],
+  28: ['用感知手段（光学、声学、味觉、嗅觉）替代机械作用','用电场、磁场、电磁场与物体相互作用','由静止场转为可动场，由无结构场转为有结构场','将场与场敏感颗粒（如铁磁颗粒）配合使用'],
+  29: ['用气体或液体部件替代固体部件（充气结构、充液结构、气垫、液压、静液压等）'],
+  30: ['用柔性壳体和薄膜替代立体结构','用柔性壳体和薄膜把物体与外部环境隔离'],
+  31: ['把物体做成多孔的，或加入多孔元件（嵌入物、涂层等）','若物体已是多孔的，则利用孔隙引入有用物质或功能'],
+  32: ['改变物体或其外部环境的颜色','改变物体或其外部环境的透明度'],
+  33: ['使与给定物体相互作用的其他物体采用相同材料（或性能相近的材料）'],
+  34: ['让已完成功能的部件消失（溶解、蒸发等）或在运行中直接改变','在运行过程中直接补充或再生消耗掉的部件'],
+  35: ['改变物体的物理状态（气态、液态、固态）','改变浓度或稠度','改变柔性程度','改变温度'],
+  36: ['利用相变过程中发生的现象（体积变化、吸热或放热等）'],
+  37: ['利用材料的热胀冷缩','使用多种热膨胀系数不同的材料组合'],
+  38: ['用富氧空气替代普通空气','用纯氧替代富氧空气','用电离辐射作用于空气或氧气','使用离子化的氧','用臭氧替代离子化的氧'],
+  39: ['用惰性环境替代通常环境','向物体中加入中性物质或惰性添加剂'],
+  40: ['将均质材料改为复合材料（多种材料组合）']
+};
+
+// 行业案例库（对应数据库设计中的 case_study 表：industry_tag + component_type + problem + solution）
+// 面向工业制造场景的四个行业。用户选定所属行业后，同行业案例会优先展示。
+// 说明：以下为通用工程实践中的典型做法示例，用于帮助理解原理如何落地，
+// 并非取自经过验证的专利/项目案例库。接入内部真实案例时应替换或补充。
+const INDUSTRIES = ['机械加工', '汽车零部件', '家电结构', '精密仪器'];
+
+const INDUSTRY_CASES = {
+  1: [{ind:'机械加工',comp:'结构件',prob:'大型机床床身整体铸造，运输和吊装困难',sol:'改为分体式床身，现场用高强度螺栓和定位销拼装'},
+      {ind:'汽车零部件',comp:'传动件',prob:'整体式传动轴过长，高速时易共振',sol:'改为分段式传动轴，中间增加支承轴承'},
+      {ind:'家电结构',comp:'结构件',prob:'一体式空调噪音大且安装受限',sol:'分体式设计，压缩机与蒸发器分离，噪音源移到室外'}],
+  2: [{ind:'精密仪器',comp:'传动件',prob:'检测设备内置电机发热，干扰光学测量精度',sol:'把电机移到机箱外，用柔性轴传递动力，热源与光路隔离'},
+      {ind:'汽车零部件',comp:'传动件',prob:'变速箱油泵集成在壳体内，维护需整体拆解',sol:'油泵抽出为独立外置模块，可单独更换'},
+      {ind:'家电结构',comp:'结构件',prob:'吸尘器电机与集尘腔一体，噪音直接传出',sol:'分离电机腔并单独做隔声处理'}],
+  3: [{ind:'机械加工',comp:'刀具',prob:'刀具整体硬化后脆性大易崩刃',sol:'仅刃口做涂层硬化，基体保持韧性'},
+      {ind:'汽车零部件',comp:'结构件',prob:'车身整体用同种钢板，安全与轻量难以兼顾',sol:'分区选材，A/B柱用热成型钢，覆盖件用普通钢或铝'},
+      {ind:'家电结构',comp:'结构件',prob:'洗衣机内筒孔径一致，脱水与洗涤效果难兼顾',sol:'不同区域采用不同孔径与孔形'}],
+  4: [{ind:'机械加工',comp:'紧固件',prob:'对称布置的定位销导致工件可能装反',sol:'定位销改为非对称布置，物理上杜绝装错'},
+      {ind:'汽车零部件',comp:'结构件',prob:'对称胎面花纹难以兼顾排水与抓地',sol:'非对称花纹，内外侧分别优化排水和操控'},
+      {ind:'精密仪器',comp:'光学件',prob:'球面镜片存在像差',sol:'采用非对称自由曲面镜片校正'}],
+  5: [{ind:'机械加工',comp:'设备',prob:'车、铣分设备加工，多次装夹累积误差',sol:'车铣复合加工中心一次装夹完成多工序'},
+      {ind:'汽车零部件',comp:'传动件',prob:'电机、减速器、控制器分体布置占空间且线束长',sol:'集成式电驱桥三合一'},
+      {ind:'家电结构',comp:'整机',prob:'洗衣机和烘干机分别占地',sol:'洗烘一体机合并两种功能'}],
+  6: [{ind:'汽车零部件',comp:'结构件',prob:'电池包壳体只做防护，另需车身结构承载，重量翻倍',sol:'CTB电池车身一体化，壳体同时承担结构承载'},
+      {ind:'家电结构',comp:'结构件',prob:'冰箱门体功能单一',sol:'门体兼作储物架支撑与密封结构'},
+      {ind:'机械加工',comp:'夹具',prob:'夹具与冷却液导流装置分设',sol:'夹具体内开流道，兼做冷却液导流'}],
+  7: [{ind:'机械加工',comp:'刀具',prob:'多规格刀柄占用大量刀库空间',sol:'套装式嵌套收纳，小规格套入大规格'},
+      {ind:'汽车零部件',comp:'结构件',prob:'碰撞时转向管柱刺入驾驶舱',sol:'伸缩嵌套式管柱，碰撞时逐级溃缩'},
+      {ind:'精密仪器',comp:'光学件',prob:'长焦镜筒携带不便',sol:'多级伸缩镜筒，收纳时层层嵌套'}],
+  8: [{ind:'机械加工',comp:'结构件',prob:'主轴箱自重导致立柱变形和驱动负载大',sol:'配重块经钢丝绳平衡主轴箱重量'},
+      {ind:'汽车零部件',comp:'结构件',prob:'尾门笨重，开启费力',sol:'气弹簧提供反向助力'},
+      {ind:'精密仪器',comp:'结构件',prob:'精密平台自重影响测量',sol:'配重与气浮支承抵消自重'}],
+  9: [{ind:'机械加工',comp:'焊接件',prob:'焊接后工件产生收缩变形',sol:'装夹时预置反变形量，焊后回弹至设计尺寸'},
+      {ind:'汽车零部件',comp:'紧固件',prob:'螺栓在振动工况下松动',sol:'施加预紧力并使用预涂胶，抵消工作中的松动趋势'},
+      {ind:'家电结构',comp:'结构件',prob:'塑料件注塑后翘曲',sol:'模具预置反向曲率补偿'}],
+  10: [{ind:'机械加工',comp:'结构件',prob:'加工时反复找正基准，效率低',sol:'毛坯阶段预先加工出工艺基准孔和基准面'},
+       {ind:'汽车零部件',comp:'紧固件',prob:'装配现场涂胶效率低且质量不稳定',sol:'使用预涂胶螺栓，拧紧即生效'},
+       {ind:'家电结构',comp:'结构件',prob:'总装工序繁多，节拍长',sol:'预装配成模块化组件后再上总装线'}],
+  11: [{ind:'汽车零部件',comp:'结构件',prob:'爆胎导致失控风险',sol:'备胎或防爆轮胎，胎压监测提前预警'},
+       {ind:'精密仪器',comp:'电控件',prob:'突然断电导致测量数据丢失',sol:'内置UPS后备电源和自动存盘'},
+       {ind:'机械加工',comp:'刀具',prob:'刀具意外磨损导致批量废品',sol:'刀具寿命监测＋备用刀位自动换刀'}],
+  12: [{ind:'机械加工',comp:'产线',prob:'工件在工序间需反复升降，耗时耗能',sol:'各工位保持同一工作高度，工件平移流转'},
+       {ind:'汽车零部件',comp:'产线',prob:'总装时工人需弯腰或登高作业',sol:'随行升降台跟随车身，始终保持舒适作业高度'},
+       {ind:'家电结构',comp:'产线',prob:'装配线高度不一致造成搬运',sol:'等高辊道连续输送'}],
+  13: [{ind:'机械加工',comp:'设备',prob:'大型工件旋转加工困难且危险',sol:'工件固定、刀具旋转并绕工件走刀'},
+       {ind:'精密仪器',comp:'结构件',prob:'热装配可能引起材料退火和变形',sol:'改用深冷收缩装配（冷装配）'},
+       {ind:'汽车零部件',comp:'结构件',prob:'传统减振器活塞杆易受污染',sol:'倒置式减振器，杆在下筒在上'}],
+  14: [{ind:'机械加工',comp:'传动件',prob:'滑动丝杠摩擦大、效率低、易磨损',sol:'改用滚珠丝杠，滑动摩擦变滚动摩擦'},
+       {ind:'汽车零部件',comp:'结构件',prob:'直角过渡处应力集中导致开裂',sol:'增大圆角半径，用曲面平顺过渡'},
+       {ind:'家电结构',comp:'结构件',prob:'方形内胆死角难清洁',sol:'内胆改为大圆角曲面'}],
+  15: [{ind:'汽车零部件',comp:'传动件',prob:'固定气门正时无法兼顾低速扭矩与高速功率',sol:'可变气门正时VVT随工况调整'},
+       {ind:'机械加工',comp:'设备',prob:'固定进给速度在材料硬度变化时崩刃或效率低',sol:'自适应控制，按实测切削力动态调整进给'},
+       {ind:'家电结构',comp:'整机',prob:'定频压缩机频繁启停，温度波动大',sol:'变频压缩机连续调节输出'}],
+  16: [{ind:'机械加工',comp:'结构件',prob:'一次加工到最终尺寸难保证精度',sol:'粗加工留余量，再半精、精加工逐步逼近'},
+       {ind:'汽车零部件',comp:'涂装',prob:'一次喷涂难以均匀覆盖',sol:'略过量喷涂后流平，再打磨到要求'},
+       {ind:'精密仪器',comp:'结构件',prob:'镀层厚度难以精确控制',sol:'过量镀覆后精研磨至公差带'}],
+  17: [{ind:'机械加工',comp:'设备',prob:'平面刀库占地大、容量有限',sol:'改为立体链式或转塔式刀库'},
+       {ind:'汽车零部件',comp:'结构件',prob:'三轴加工无法完成复杂曲面',sol:'五轴联动加工，刀具可多角度接近'},
+       {ind:'家电结构',comp:'结构件',prob:'单层储物空间利用率低',sol:'多层抽屉式立体分区'}],
+  18: [{ind:'机械加工',comp:'刀具',prob:'难加工材料切削力大、刀具磨损快',sol:'超声辅助切削，降低平均切削力'},
+       {ind:'精密仪器',comp:'清洗',prob:'细小盲孔和缝隙难以清洁',sol:'超声波清洗，空化作用深入缝隙'},
+       {ind:'汽车零部件',comp:'结构件',prob:'焊接件残余应力导致后续变形',sol:'振动时效替代热时效，消除残余应力'}],
+  19: [{ind:'机械加工',comp:'刀具',prob:'深孔钻削排屑不畅，刀具卡死',sol:'啄式钻孔，进给与退刀交替进行'},
+       {ind:'汽车零部件',comp:'电控件',prob:'小雨时连续雨刮刮擦干玻璃',sol:'间歇雨刮模式，按雨量调整周期'},
+       {ind:'家电结构',comp:'整机',prob:'连续喷淋耗水量大',sol:'脉冲间歇喷淋，利用停顿期浸泡'}],
+  20: [{ind:'机械加工',comp:'设备',prob:'装卸工件时机床停机等待',sol:'双工作台交换，加工与装卸并行'},
+       {ind:'汽车零部件',comp:'模具',prob:'单工序冲压需多次转运和定位',sol:'级进模连续冲压，一次走料完成全部工序'},
+       {ind:'家电结构',comp:'产线',prob:'批次生产存在换线空档',sol:'柔性流水线连续混线生产'}],
+  21: [{ind:'机械加工',comp:'刀具',prob:'常规切削热量传入工件导致热变形',sol:'高速切削，热量随切屑快速带走'},
+       {ind:'汽车零部件',comp:'焊接件',prob:'常规焊接热影响区大、变形明显',sol:'激光焊接快速通过，热影响区极小'},
+       {ind:'精密仪器',comp:'结构件',prob:'长时间热处理导致晶粒粗大',sol:'快速感应加热淬火，缩短高温停留'}],
+  22: [{ind:'汽车零部件',comp:'动力件',prob:'发动机废气能量白白排放',sol:'涡轮增压器回收废气能量压缩进气'},
+       {ind:'机械加工',comp:'物料',prob:'切屑作为废料处理增加成本',sol:'切屑压块回收重熔，或作为磨料再利用'},
+       {ind:'家电结构',comp:'整机',prob:'洗衣排水带走大量热量',sol:'热泵回收废水余热用于加热进水'}],
+  23: [{ind:'机械加工',comp:'电控件',prob:'开环控制存在累积定位误差',sol:'光栅尺全闭环反馈实时修正位置'},
+       {ind:'汽车零部件',comp:'电控件',prob:'固定喷油量无法适应工况变化',sol:'氧传感器反馈闭环控制空燃比'},
+       {ind:'家电结构',comp:'电控件',prob:'加热时间固定导致过热或不足',sol:'温度传感器反馈调节加热功率'}],
+  24: [{ind:'机械加工',comp:'夹具',prob:'硬爪直接夹持划伤已加工表面',sol:'加软爪或铜垫作为中介保护层'},
+       {ind:'精密仪器',comp:'检测',prob:'探头与工件之间空气层影响超声传导',sol:'涂耦合剂作为声学中介'},
+       {ind:'汽车零部件',comp:'物流',prob:'零件直接堆叠转运易磕碰',sol:'专用工装托盘作为中介承载'}],
+  25: [{ind:'机械加工',comp:'设备',prob:'人工清理切屑占用停机时间',sol:'自动排屑机持续排屑，刀具磨损自动补偿'},
+       {ind:'家电结构',comp:'整机',prob:'油烟机内部油污需人工拆洗',sol:'自清洁功能，加热融化油污自动流入油杯'},
+       {ind:'汽车零部件',comp:'传动件',prob:'轴承需定期加注润滑脂',sol:'含油自润滑轴承，材料自身释放润滑'}],
+  26: [{ind:'机械加工',comp:'工艺',prob:'真实件试装成本高、周期长',sol:'3D打印样件先行试装验证干涉'},
+       {ind:'汽车零部件',comp:'验证',prob:'实车碰撞试验昂贵且不可重复',sol:'有限元仿真与数字孪生先做虚拟碰撞'},
+       {ind:'精密仪器',comp:'检测',prob:'每次校准都需标准件实测',sol:'用标准样块和标定曲线替代重复实测'}],
+  27: [{ind:'机械加工',comp:'刀具',prob:'整体刀具重磨成本高、周期长',sol:'可转位一次性刀片，钝了直接换刃'},
+       {ind:'家电结构',comp:'耗材',prob:'滤网清洗不彻底且费时',sol:'低成本一次性滤网定期更换'},
+       {ind:'汽车零部件',comp:'模具',prob:'试制阶段开钢模成本过高',sol:'用软模/硅胶模做小批量试制'}],
+  28: [{ind:'精密仪器',comp:'检测',prob:'接触式测量会划伤或压变形工件',sol:'激光/光学非接触测量替代探针'},
+       {ind:'汽车零部件',comp:'电控件',prob:'机械凸轮控制无法灵活调节',sol:'电磁阀电控驱动替代机械凸轮'},
+       {ind:'机械加工',comp:'夹具',prob:'机械夹紧力集中导致薄壁件变形',sol:'电永磁吸盘均匀吸附，夹紧力分布均匀'}],
+  29: [{ind:'机械加工',comp:'夹具',prob:'螺旋夹紧受力不均导致工件变形',sol:'液压夹具多点同步均匀夹紧'},
+       {ind:'汽车零部件',comp:'结构件',prob:'制动踏板力过大',sol:'真空助力器用气压差放大踏板力'},
+       {ind:'家电结构',comp:'结构件',prob:'柜门关闭撞击噪音大',sol:'液压阻尼铰链缓冲'}],
+  30: [{ind:'家电结构',comp:'保温件',prob:'传统发泡保温层厚，占用内胆空间',sol:'真空绝热板VIP，薄膜封装实现更薄更好的保温'},
+       {ind:'汽车零部件',comp:'安全件',prob:'刚性防护结构占空间且平时无用',sol:'安全气囊平时折叠收纳，碰撞时瞬时展开'},
+       {ind:'精密仪器',comp:'防护件',prob:'刚性防尘罩妨碍运动部件',sol:'柔性风琴罩随运动伸缩并防尘'}],
+  31: [{ind:'汽车零部件',comp:'结构件',prob:'实心结构吸能差且重',sol:'泡沫铝多孔结构，压溃吸能同时减重'},
+       {ind:'家电结构',comp:'降噪件',prob:'压缩机噪音向外辐射',sol:'多孔吸音棉包覆，孔隙耗散声能'},
+       {ind:'机械加工',comp:'夹具',prob:'薄片工件难以夹持',sol:'多孔陶瓷真空吸盘，通过微孔均匀吸附'}],
+  32: [{ind:'机械加工',comp:'检验',prob:'配合面接触状况无法直观判断',sol:'涂红丹检验接触斑点，按着色分布判断'},
+       {ind:'汽车零部件',comp:'检测',prob:'零件是否曾经过热无法事后判断',sol:'温变示温漆，超温后颜色不可逆变化'},
+       {ind:'精密仪器',comp:'结构件',prob:'密闭腔体内部状态不可见',sol:'局部改用透明视窗观察'}],
+  33: [{ind:'汽车零部件',comp:'结构件',prob:'多材料混用导致回收时分拣困难',sol:'同族材料设计，如全铝车身便于整体回收'},
+       {ind:'精密仪器',comp:'结构件',prob:'不同膨胀系数材料配合，温度变化引起漂移',sol:'配对件选用膨胀系数一致的材料'},
+       {ind:'机械加工',comp:'焊接件',prob:'焊材与母材性能差异导致焊缝开裂',sol:'选用与母材成分相近的焊材'}],
+  34: [{ind:'机械加工',comp:'工艺',prob:'3D打印复杂内腔的支撑难以去除',sol:'可溶性支撑材料，成型后浸泡溶解即可去除'},
+       {ind:'汽车零部件',comp:'安全件',prob:'碰撞能量需要被吸收',sol:'溃缩吸能盒一次性变形吸能后整体更换'},
+       {ind:'家电结构',comp:'耗材',prob:'过滤功能随使用衰减',sol:'模块化可更换滤芯，定期再生系统性能'}],
+  35: [{ind:'机械加工',comp:'工艺',prob:'常温下材料塑性差难以成型',sol:'加热到再结晶温度以上热锻成型'},
+       {ind:'汽车零部件',comp:'结构件',prob:'零件硬度和耐磨性不足',sol:'深冷处理促进残余奥氏体转变，提高硬度'},
+       {ind:'家电结构',comp:'保温件',prob:'保温层强度与导热难以兼顾',sol:'调整发泡密度，在不同区域取不同值'}],
+  36: [{ind:'家电结构',comp:'散热件',prob:'大功率器件局部热点难以扩散',sol:'热管内工质相变循环，等效导热率极高'},
+       {ind:'汽车零部件',comp:'电池件',prob:'电池温度波动影响寿命与安全',sol:'相变材料PCM在设定温度吸放热，抑制温升'},
+       {ind:'精密仪器',comp:'温控件',prob:'需要无振动无电磁干扰的制冷',sol:'干冰升华制冷，无机械运动部件'}],
+  37: [{ind:'机械加工',comp:'装配',prob:'过盈配合压装易划伤配合面',sol:'加热外圈热装配，冷却后自然紧固'},
+       {ind:'汽车零部件',comp:'电控件',prob:'需要简单可靠的温度开关',sol:'双金属片受热弯曲实现通断'},
+       {ind:'家电结构',comp:'控制件',prob:'制冷剂流量需随负荷自动调节',sol:'热力膨胀阀感温包受热膨胀驱动阀芯'}],
+  38: [{ind:'家电结构',comp:'净化件',prob:'常规过滤无法杀灭细菌',sol:'臭氧发生器强氧化除菌除味'},
+       {ind:'机械加工',comp:'热处理',prob:'常规空气燃烧炉温上升慢、效率低',sol:'富氧燃烧提高火焰温度和燃烧效率'},
+       {ind:'精密仪器',comp:'表面处理',prob:'有机残留物用溶剂难以彻底清除',sol:'等离子体/离子化氧处理，氧化分解有机污染'}],
+  39: [{ind:'机械加工',comp:'焊接件',prob:'焊接时熔池氧化产生夹渣和气孔',sol:'氩弧焊惰性气体保护熔池'},
+       {ind:'家电结构',comp:'保温件',prob:'气体对流传热导致保温效果差',sol:'抽真空隔绝对流与传导'},
+       {ind:'精密仪器',comp:'工艺',prob:'高温工艺中材料表面氧化',sol:'氮气吹扫置换腔体内氧气'}],
+  40: [{ind:'汽车零部件',comp:'传动件',prob:'钢制传动轴重且临界转速低',sol:'碳纤维复合材料传动轴，兼顾轻量与刚度'},
+       {ind:'机械加工',comp:'刀具',prob:'高速钢刀具红硬性不足',sol:'硬质合金（碳化钨+钴粘结相）复合材料刀具'},
+       {ind:'家电结构',comp:'结构件',prob:'纯塑料件刚度不足易变形',sol:'玻纤增强塑料，兼顾成型性与刚度'}]
+};
+
+// 39个工程参数
+const TRIZ_PARAMS = [
+  {id:1, name:'运动物体的重量', category:'物理参数'},
+  {id:2, name:'静止物体的重量', category:'物理参数'},
+  {id:3, name:'运动物体的长度', category:'物理参数'},
+  {id:4, name:'静止物体的长度', category:'物理参数'},
+  {id:5, name:'运动物体的面积', category:'物理参数'},
+  {id:6, name:'静止物体的面积', category:'物理参数'},
+  {id:7, name:'运动物体的体积', category:'物理参数'},
+  {id:8, name:'静止物体的体积', category:'物理参数'},
+  {id:9, name:'速度', category:'技术参数'},
+  {id:10, name:'力', category:'技术参数'},
+  {id:11, name:'应力或压力', category:'技术参数'},
+  {id:12, name:'形状', category:'技术参数'},
+  {id:13, name:'结构稳定性', category:'质量参数'},
+  {id:14, name:'强度', category:'质量参数'},
+  {id:15, name:'运动物体作用时间', category:'技术参数'},
+  {id:16, name:'静止物体作用时间', category:'技术参数'},
+  {id:17, name:'温度', category:'物理参数'},
+  {id:18, name:'照度', category:'物理参数'},
+  {id:19, name:'运动物体的能量消耗', category:'效率参数'},
+  {id:20, name:'静止物体的能量消耗', category:'效率参数'},
+  {id:21, name:'功率', category:'效率参数'},
+  {id:22, name:'能量损失', category:'效率参数'},
+  {id:23, name:'物质损失', category:'效率参数'},
+  {id:24, name:'信息损失', category:'效率参数'},
+  {id:25, name:'时间损失', category:'效率参数'},
+  {id:26, name:'物质数量', category:'物理参数'},
+  {id:27, name:'可靠性', category:'质量参数'},
+  {id:28, name:'测量精度', category:'质量参数'},
+  {id:29, name:'制造精度', category:'质量参数'},
+  {id:30, name:'外部有害因素作用', category:'质量参数'},
+  {id:31, name:'对象产生的有害因素', category:'质量参数'},
+  {id:32, name:'可制造性', category:'效率参数'},
+  {id:33, name:'可操作性', category:'效率参数'},
+  {id:34, name:'可维修性', category:'效率参数'},
+  {id:35, name:'适应性或通用性', category:'技术参数'},
+  {id:36, name:'装置复杂性', category:'技术参数'},
+  {id:37, name:'检测与测量困难度', category:'技术参数'},
+  {id:38, name:'自动化程度', category:'技术参数'},
+  {id:39, name:'生产率', category:'效率参数'}
+];
+
+// 矛盾矩阵（Altshuller经典39x39矩阵，1190个已定义单元格）
+// 数据来源：Casey Perno 转录版（2007），经 kamil-szczepanik/TRIZ-Agents（MIT协议）整理
+// 键格式：'改善参数-恶化参数'；矩阵原本不对称，未收录的组合在原始矩阵中即为空（Altshuller未给出推荐），
+// 而非本工具遗漏——查询时会明确提示这类情况，不会伪装成经典矩阵结果。
+const CONTRADICTION_MATRIX = {
+  "1-3":[15,8,29,34], "1-5":[29,17,38,34], "1-7":[29,2,40,28], "1-9":[2,8,15,38], "1-10":[8,10,18,37], "1-11":[10,36,37,40],
+  "1-12":[10,14,35,40], "1-13":[1,35,19,39], "1-14":[28,27,18,40], "1-15":[5,34,31,35], "1-17":[6,29,4,38], "1-18":[19,1,32],
+  "1-19":[35,12,34,31], "1-21":[12,36,18,31], "1-22":[6,2,34,19], "1-23":[5,35,3,31], "1-24":[10,24,35], "1-25":[10,35,20,28],
+  "1-26":[3,26,18,31], "1-27":[1,3,11,27], "1-28":[28,27,35,26], "1-29":[28,35,26,18], "1-30":[22,21,18,27], "1-31":[22,35,31,39],
+  "1-32":[27,28,1,36], "1-33":[35,3,2,24], "1-34":[2,27,28,11], "1-35":[29,5,15,8], "1-36":[26,30,36,34], "1-37":[28,29,26,32],
+  "1-38":[26,35,18,19], "1-39":[35,3,24,37], "2-4":[10,1,29,35], "2-6":[35,30,13,2], "2-8":[5,35,14,2], "2-10":[8,10,19,35],
+  "2-11":[13,29,10,18], "2-12":[13,10,29,14], "2-13":[26,39,1,40], "2-14":[28,2,10,27], "2-16":[2,27,19,6], "2-17":[28,19,32,22],
+  "2-18":[19,32,35], "2-20":[18,19,28,1], "2-21":[15,19,18,22], "2-22":[18,19,28,15], "2-23":[5,8,13,30], "2-24":[10,15,35],
+  "2-25":[10,20,35,26], "2-26":[19,6,18,26], "2-27":[10,28,8,3], "2-28":[18,26,28], "2-29":[10,1,35,17], "2-30":[2,19,22,37],
+  "2-31":[35,22,1,39], "2-32":[28,1,9], "2-33":[6,13,1,32], "2-34":[2,27,28,11], "2-35":[19,15,29], "2-36":[1,10,26,39],
+  "2-37":[25,28,17,15], "2-38":[2,26,35], "2-39":[1,28,15,35], "3-1":[8,15,29,34], "3-5":[15,17,4], "3-7":[7,17,4,35],
+  "3-9":[13,4,8], "3-10":[17,10,4], "3-11":[1,8,35], "3-12":[1,8,10,29], "3-13":[1,8,15,34], "3-14":[8,35,29,34],
+  "3-17":[10,15,19], "3-19":[8,35,24], "3-21":[1,35], "3-22":[7,2,35,39], "3-23":[4,29,23,10], "3-24":[1,24],
+  "3-25":[15,2,29], "3-26":[29,35], "3-27":[10,14,29,40], "3-28":[28,32,4], "3-29":[10,28,29,37], "3-30":[1,15,17,24],
+  "3-31":[17,15], "3-32":[1,29,17], "3-33":[15,29,35,4], "3-34":[1,28,10], "3-35":[14,15,1,16], "3-36":[1,19,26,24],
+  "3-37":[35,1,26,24], "3-38":[17,24,26,16], "3-39":[14,4,28,29], "4-2":[35,28,40,29], "4-6":[17,7,10,40], "4-8":[35,8,2,14],
+  "4-10":[28,10], "4-11":[1,14,35], "4-12":[13,14,15,7], "4-13":[39,37,35], "4-14":[15,14,28,26], "4-16":[1,10,35],
+  "4-17":[3,35,38,18], "4-18":[3,25], "4-21":[12,8], "4-22":[6,28], "4-23":[10,28,24,35], "4-24":[24,26],
+  "4-25":[30,29,14], "4-27":[15,29,28], "4-28":[32,28,3], "4-29":[2,32,10], "4-30":[1,18], "4-32":[15,17,27],
+  "4-33":[2,25], "4-35":[1,35], "4-36":[1,26], "4-39":[30,14,7,26], "5-1":[2,17,29,4], "5-3":[14,15,18,4],
+  "5-7":[7,14,17,4], "5-9":[29,30,4,34], "5-10":[19,30,35,2], "5-11":[10,15,36,28], "5-12":[5,34,29,4], "5-13":[11,2,13,39],
+  "5-14":[3,15,40,14], "5-15":[6,3], "5-17":[2,15,16], "5-18":[15,32,19,13], "5-19":[19,32], "5-21":[19,10,32,18],
+  "5-22":[15,17,30,26], "5-23":[10,35,2,39], "5-24":[30,26], "5-25":[26,4], "5-26":[29,30,6,13], "5-27":[29,9],
+  "5-28":[26,28,32,3], "5-29":[2,32], "5-30":[22,33,28,1], "5-31":[17,2,18,39], "5-32":[13,1,26,24], "5-33":[15,17,13,16],
+  "5-34":[15,13,10,1], "5-35":[15,30], "5-36":[14,1,13], "5-37":[2,36,26,18], "5-38":[14,30,28,23], "5-39":[10,26,34,2],
+  "6-2":[30,2,14,18], "6-4":[26,7,9,39], "6-10":[1,18,35,36], "6-11":[10,15,36,37], "6-13":[2,38], "6-16":[2,10,19,30],
+  "6-17":[35,39,38], "6-21":[17,32], "6-22":[17,7,30], "6-23":[10,14,18,39], "6-24":[30,16], "6-25":[10,35,4,18],
+  "6-26":[2,18,40,4], "6-27":[32,35,40,4], "6-28":[26,28,32,3], "6-29":[2,29,18,36], "6-30":[27,2,39,35], "6-31":[22,1,40],
+  "6-32":[40,16], "6-33":[16,4], "6-35":[15,16], "6-36":[1,18,36], "6-37":[2,35,30,18], "6-39":[10,15,17,7],
+  "7-1":[2,26,29,40], "7-3":[1,7,4,35], "7-5":[1,7,4,17], "7-9":[29,4,38,34], "7-10":[15,35,36,37], "7-11":[6,35,36,37],
+  "7-12":[1,15,29,4], "7-13":[28,10,1,39], "7-14":[9,14,15,7], "7-15":[6,35,4], "7-17":[34,39,10,18], "7-18":[2,13,10],
+  "7-21":[35,6,13,18], "7-22":[7,15,13,16], "7-23":[36,39,34,10], "7-24":[2,22], "7-25":[2,6,34,10], "7-26":[29,30,7],
+  "7-27":[14,1,40,11], "7-28":[25,26,28], "7-29":[25,28,2,16], "7-30":[22,21,27,35], "7-31":[17,2,40,1], "7-32":[29,1,40],
+  "7-33":[15,13,30,12], "7-35":[15,29], "7-36":[26,1], "7-37":[29,26,4], "7-38":[35,34,16,24], "7-39":[10,6,2,34],
+  "8-2":[35,10,19,14], "8-3":[19,14], "8-4":[35,8,2,14], "8-10":[2,18,37], "8-11":[24,35], "8-12":[7,2,35],
+  "8-13":[34,28,35,40], "8-14":[9,14,17,15], "8-16":[35,34,38], "8-17":[35,6,4], "8-21":[30,6], "8-23":[10,39,35,34],
+  "8-25":[35,16,32,18], "8-26":[35,3], "8-27":[2,35,16], "8-29":[35,10,25], "8-30":[34,39,19,27], "8-31":[30,18,35,4],
+  "8-36":[1,31], "8-37":[2,17,26], "8-39":[35,37,10,2], "9-1":[2,28,13,38], "9-3":[13,14,8], "9-5":[29,30,34],
+  "9-7":[7,29,34], "9-10":[13,28,15,19], "9-11":[6,18,38,40], "9-12":[35,15,18,34], "9-13":[28,33,1,18], "9-14":[8,3,26,14],
+  "9-15":[3,19,35,5], "9-17":[28,30,36,2], "9-18":[10,13,19], "9-19":[8,15,35,38], "9-21":[19,35,38,2], "9-22":[14,20,19,35],
+  "9-23":[10,13,28,38], "9-24":[13,26], "9-26":[10,19,29,38], "9-27":[11,35,27,28], "9-28":[28,32,1,24], "9-29":[10,28,32,25],
+  "9-30":[1,28,35,23], "9-31":[2,24,35,21], "9-32":[35,13,8,1], "9-33":[32,28,13,12], "9-34":[34,2,28,27], "9-35":[15,10,26],
+  "9-36":[10,28,4,34], "9-37":[3,34,27,16], "9-38":[10,18], "10-1":[8,1,37,18], "10-2":[18,13,1,28], "10-3":[17,19,9,36],
+  "10-4":[28,10], "10-5":[19,10,15], "10-6":[1,18,36,37], "10-7":[15,9,12,37], "10-8":[2,36,18,37], "10-9":[13,28,15,12],
+  "10-11":[18,21,11], "10-12":[10,35,40,34], "10-13":[35,10,21], "10-14":[35,10,14,27], "10-15":[19,2], "10-17":[35,10,21],
+  "10-19":[19,17,10], "10-20":[1,16,36,37], "10-21":[19,35,18,37], "10-22":[14,15], "10-23":[8,35,40,5], "10-25":[10,37,36],
+  "10-26":[14,29,18,36], "10-27":[3,35,13,21], "10-28":[35,10,23,24], "10-29":[28,29,37,36], "10-30":[1,35,40,18], "10-31":[13,3,36,24],
+  "10-32":[15,37,18,1], "10-33":[1,28,3,25], "10-34":[15,1,11], "10-35":[15,17,18,20], "10-36":[26,35,10,18], "10-37":[36,37,10,19],
+  "10-38":[2,35], "10-39":[3,28,35,37], "11-1":[10,36,37,40], "11-2":[13,29,10,18], "11-3":[35,10,36], "11-4":[35,1,14,16],
+  "11-5":[10,15,36,28], "11-6":[10,15,36,37], "11-7":[6,35,10], "11-8":[35,24], "11-9":[6,35,36], "11-10":[36,35,21],
+  "11-12":[35,4,15,10], "11-13":[35,33,2,40], "11-14":[9,18,3,40], "11-15":[19,3,27], "11-17":[35,39,19,2], "11-19":[14,24,10,37],
+  "11-21":[10,35,14], "11-22":[2,36,25], "11-23":[10,36,3,37], "11-25":[37,36,4], "11-26":[10,14,36], "11-27":[10,13,19,35],
+  "11-28":[6,28,25], "11-29":[3,35], "11-30":[22,2,37], "11-31":[2,33,27,18], "11-32":[1,35,16], "11-36":[19,1,35],
+  "11-37":[2,36,37], "11-38":[35,24], "11-39":[10,14,35,37], "12-1":[8,10,29,40], "12-2":[15,10,26,3], "12-3":[29,34,5,4],
+  "12-4":[13,14,10,7], "12-5":[5,34,4,10], "12-7":[14,4,15,22], "12-8":[7,2,35], "12-9":[35,15,34,18], "12-10":[35,10,37,40],
+  "12-11":[34,15,10,14], "12-13":[33,1,18,4], "12-14":[30,14,10,40], "12-15":[14,26,9,25], "12-17":[22,14,19,32], "12-18":[13,15,32],
+  "12-19":[2,6,34,14], "12-21":[4,6,2], "12-23":[35,29,3,5], "12-25":[14,10,34,17], "12-26":[36,22], "12-27":[10,40,16],
+  "12-28":[28,32,1], "12-29":[32,30,40], "12-30":[22,1,2,35], "12-31":[35,1], "12-32":[1,32,17,28], "12-33":[32,15,26],
+  "12-34":[2,13,1], "12-35":[1,15,29], "12-36":[16,29,1,28], "12-37":[15,13,39], "12-38":[15,1,32], "12-39":[17,26,34,10],
+  "13-1":[21,35,2,39], "13-2":[26,39,1,40], "13-3":[13,15,1,28], "13-5":[2,11,13], "13-7":[28,10,19,39], "13-8":[34,28,35,40],
+  "13-9":[33,15,28,18], "13-10":[10,35,21,16], "13-11":[2,35,40], "13-12":[22,1,18,4], "13-14":[17,9,15], "13-15":[13,27,10,35],
+  "13-16":[39,3,35,23], "13-17":[35,1,32], "13-18":[32,3,27,16], "13-19":[13,19], "13-20":[27,4,29,18], "13-21":[32,35,27,31],
+  "13-22":[14,2,39,6], "13-23":[2,14,30,40], "13-25":[35,27], "13-26":[15,32,35], "13-30":[35,24,30,18], "13-31":[35,40,27,39],
+  "13-32":[35,19], "13-33":[32,35,30], "13-34":[2,35,10,16], "13-35":[35,30,34,2], "13-36":[2,35,22,26], "13-37":[35,22,39,23],
+  "13-38":[1,8,35], "13-39":[23,35,40,3], "14-1":[1,8,40,15], "14-2":[40,26,27,1], "14-3":[1,15,8,35], "14-4":[15,14,28,26],
+  "14-5":[3,34,40,29], "14-6":[9,40,28], "14-7":[10,15,14,7], "14-8":[9,14,17,15], "14-9":[8,13,26,14], "14-10":[10,18,3,14],
+  "14-11":[10,3,18,40], "14-12":[10,30,35,40], "14-13":[13,17,35], "14-15":[27,3,26], "14-17":[30,10,40], "14-18":[35,19],
+  "14-19":[19,35,10], "14-21":[10,26,35,28], "14-23":[35,28,31,40], "14-25":[29,3,28,10], "14-26":[29,10,27], "14-27":[11,3],
+  "14-28":[3,27,16], "14-29":[3,27], "14-30":[18,35,37,1], "14-31":[15,35,22,2], "14-32":[11,3,10,32], "14-33":[32,40,25,2],
+  "14-34":[27,11,3], "14-35":[15,3,32], "14-36":[2,13,25,28], "14-37":[27,3,15,40], "14-39":[29,35,10,14], "15-1":[19,5,34,31],
+  "15-3":[2,19,9], "15-5":[3,17,19], "15-7":[10,2,19,30], "15-9":[3,35,5], "15-10":[19,2,16], "15-11":[19,3,27],
+  "15-12":[14,26,28,25], "15-13":[13,3,35], "15-14":[27,3,10], "15-17":[19,35,39], "15-18":[2,19,4,35], "15-19":[28,6,35,18],
+  "15-21":[19,10,35,38], "15-23":[28,27,3,18], "15-25":[20,10,28,18], "15-26":[3,35,10,40], "15-27":[11,2,13], "15-29":[3,27,16,40],
+  "15-30":[22,15,33,28], "15-31":[21,39,16,22], "15-32":[27,1,4], "15-33":[12,27], "15-34":[29,10,27], "15-35":[1,35,13],
+  "15-36":[10,4,29,15], "15-37":[19,29,39,35], "15-38":[6,10], "15-39":[35,17,14,19], "16-2":[6,27,19,16], "16-4":[1,40,35],
+  "16-8":[35,34,38], "16-13":[39,3,35,23], "16-17":[19,18,36,40], "16-23":[27,16,18,38], "16-25":[28,20,10,16], "16-26":[3,35,31],
+  "16-27":[34,27,6,40], "16-28":[10,26,24], "16-30":[17,1,40,33], "16-32":[35,10], "16-37":[25,34,6,35], "16-39":[20,10,16,38],
+  "17-1":[36,22,6,38], "17-2":[22,35,32], "17-3":[15,19,9], "17-4":[15,19,9], "17-5":[3,35,39,18], "17-6":[35,38],
+  "17-7":[34,39,40,18], "17-8":[35,6,4], "17-9":[2,28,36,30], "17-10":[35,10,3,21], "17-11":[35,39,19,2], "17-12":[14,22,19,32],
+  "17-13":[1,35,32], "17-14":[10,30,22,40], "17-15":[19,13,39], "17-16":[19,18,36,40], "17-18":[32,30,21,16], "17-19":[19,15,3,17],
+  "17-21":[2,14,17,25], "17-22":[21,17,35,38], "17-23":[21,36,29,31], "17-25":[35,28,21,18], "17-26":[3,17,30,39], "17-27":[19,35,3,10],
+  "17-28":[32,19,24], "17-30":[22,33,35,2], "17-31":[22,35,2,24], "17-32":[26,27], "17-33":[26,27], "17-34":[4,10,16],
+  "17-35":[2,18,27], "17-36":[2,17,16], "17-37":[3,27,35,31], "17-38":[26,2,19,16], "17-39":[15,28,35], "18-1":[19,1,32],
+  "18-2":[2,35,32], "18-3":[19,32,16], "18-5":[19,32,26], "18-7":[2,13,10], "18-9":[10,13,19], "18-10":[26,19,6],
+  "18-12":[32,30], "18-13":[32,3,27], "18-14":[35,19], "18-15":[2,19,6], "18-17":[32,35,19], "18-19":[32,1,19],
+  "18-20":[32,35,1,15], "18-22":[13,16,1,6], "18-23":[13,1], "18-24":[1,6], "18-25":[19,1,26,17], "18-26":[1,19],
+  "18-28":[11,15,32], "18-29":[3,32], "18-30":[15,19], "18-31":[35,19,32,39], "18-32":[19,35,28,26], "18-33":[28,26,19],
+  "18-34":[15,17,13,16], "18-35":[15,1,19], "18-36":[6,32,13], "18-37":[32,15], "18-38":[2,26,10], "18-39":[2,25,16],
+  "19-1":[12,18,28,31], "19-3":[12,28], "19-5":[15,19,25], "19-7":[35,13,18], "19-9":[8,35,35], "19-10":[16,26,21,2],
+  "19-11":[23,14,25], "19-12":[12,2,29], "19-13":[19,13,17,24], "19-14":[5,19,9,35], "19-15":[28,35,6,18], "19-17":[19,24,3,14],
+  "19-18":[2,15,19], "19-21":[6,19,37,18], "19-22":[12,22,15,24], "19-23":[35,24,18,5], "19-25":[35,38,19,18], "19-26":[34,23,16,18],
+  "19-27":[19,21,11,27], "19-28":[3,1,32], "19-30":[1,35,6,27], "19-31":[2,35,6], "19-32":[28,26,30], "19-33":[19,35],
+  "19-34":[1,15,17,28], "19-35":[15,17,13,16], "19-36":[2,29,27,28], "19-37":[35,38], "19-38":[32,2], "19-39":[12,28,35],
+  "20-2":[19,9,6,27], "20-10":[36,37], "20-13":[27,4,29,18], "20-18":[19,2,35,32], "20-23":[28,27,18,31], "20-26":[3,35,31],
+  "20-27":[10,36,23], "20-30":[10,2,22,37], "20-31":[19,22,18], "20-32":[1,4], "20-37":[19,35,16,25], "20-39":[1,6],
+  "21-1":[8,36,38,31], "21-2":[19,26,17,27], "21-3":[1,10,35,37], "21-5":[19,38], "21-6":[17,32,13,38], "21-7":[35,6,38],
+  "21-8":[30,6,25], "21-9":[15,35,2], "21-10":[26,2,36,35], "21-11":[22,10,35], "21-12":[29,14,2,40], "21-13":[35,32,15,31],
+  "21-14":[26,10,28], "21-15":[19,35,10,38], "21-17":[2,14,17,25], "21-18":[16,6,19], "21-19":[16,6,19,37], "21-22":[10,35,38],
+  "21-23":[28,27,18,38], "21-24":[10,19], "21-25":[35,20,10,6], "21-26":[4,34,19], "21-27":[19,24,26,31], "21-28":[32,15,2],
+  "21-29":[32,2], "21-30":[19,22,31,2], "21-31":[2,35,18], "21-32":[26,10,34], "21-33":[26,35,10], "21-34":[35,2,10,34],
+  "21-35":[19,17,34], "21-36":[20,19,30,34], "21-37":[19,35,16], "21-38":[28,2,17], "21-39":[28,35,34], "22-1":[15,6,19,28],
+  "22-2":[19,6,18,9], "22-3":[7,2,6,13], "22-4":[6,38,7], "22-5":[15,26,17,30], "22-6":[17,7,30,18], "22-7":[7,18,23],
+  "22-9":[16,35,38], "22-10":[36,38], "22-13":[14,2,39,6], "22-17":[19,38,7], "22-18":[1,13,32,15], "22-21":[3,38],
+  "22-23":[35,27,2,37], "22-24":[19,10], "22-25":[10,18,32,7], "22-26":[7,18,25], "22-27":[11,10,35], "22-30":[21,22,35,2],
+  "22-31":[21,35,2,22], "22-33":[35,32,1], "22-34":[2,19], "22-36":[7,23], "22-37":[35,3,15,23], "22-39":[28,10,29,35],
+  "23-1":[35,6,23,40], "23-2":[35,6,22,32], "23-3":[14,29,10,39], "23-4":[10,28,24], "23-5":[35,2,10,31], "23-6":[10,18,39,31],
+  "23-7":[1,29,30,36], "23-8":[3,39,18,31], "23-9":[10,13,28,38], "23-10":[14,15,18,40], "23-11":[3,36,37,10], "23-12":[29,35,3,5],
+  "23-13":[2,14,30,40], "23-14":[35,28,31,40], "23-15":[28,27,3,18], "23-16":[27,16,18,38], "23-17":[21,36,39,31], "23-18":[1,6,13],
+  "23-19":[35,18,24,5], "23-20":[28,27,12,31], "23-21":[28,27,18,38], "23-22":[35,27,2,31], "23-25":[15,18,35,10], "23-26":[6,3,10,24],
+  "23-27":[10,29,39,35], "23-28":[16,34,31,28], "23-29":[35,10,24,31], "23-30":[33,22,30,40], "23-31":[10,1,34,29], "23-32":[15,34,33],
+  "23-33":[32,28,2,24], "23-34":[2,35,34,27], "23-35":[15,10,2], "23-36":[35,10,28,24], "23-37":[35,18,10,13], "23-38":[35,10,18],
+  "23-39":[28,35,10,23], "24-1":[10,24,35], "24-2":[10,35,5], "24-3":[1,26], "24-5":[30,26], "24-6":[30,16],
+  "24-8":[2,22], "24-9":[26,32], "24-21":[10,19], "24-22":[19,10], "24-25":[24,26,28,32], "24-26":[24,28,35],
+  "24-27":[10,28,23], "24-30":[22,10,1], "24-31":[10,21,22], "24-33":[27,22], "24-37":[35,33], "24-39":[13,23,15],
+  "25-1":[10,20,37,35], "25-2":[10,20,26,5], "25-3":[15,2,29], "25-4":[30,24,14,5], "25-5":[26,4,5,16], "25-6":[10,35,17,4],
+  "25-7":[2,5,34,10], "25-8":[35,16,32,18], "25-10":[10,37,36,5], "25-11":[37,36,4], "25-12":[4,10,34,17], "25-13":[35,3,22,5],
+  "25-14":[29,3,28,18], "25-15":[20,10,28,18], "25-16":[28,20,10,16], "25-17":[35,29,21,18], "25-18":[1,19,26,17], "25-19":[35,38,19,18],
+  "25-21":[35,20,10,6], "25-22":[10,5,18,32], "25-23":[35,18,10,39], "25-24":[24,26,28,32], "25-26":[35,38,18,16], "25-27":[10,30,4],
+  "25-28":[24,34,28,32], "25-29":[24,26,28,18], "25-30":[35,18,34], "25-31":[35,22,18,39], "25-32":[35,28,34,4], "25-33":[4,28,10,34],
+  "25-34":[32,1,10], "25-35":[35,28], "25-36":[6,29], "25-37":[18,28,32,10], "25-38":[24,28,35,30], "26-1":[35,6,18,31],
+  "26-2":[27,26,18,35], "26-3":[29,14,35,18], "26-5":[15,14,29], "26-6":[2,18,40,4], "26-7":[15,20,29], "26-9":[35,29,34,28],
+  "26-10":[35,14,3], "26-11":[10,36,14,3], "26-12":[35,14], "26-13":[15,2,17,40], "26-14":[14,35,34,10], "26-15":[3,35,10,40],
+  "26-16":[3,35,31], "26-17":[3,17,39], "26-19":[34,29,16,18], "26-20":[3,35,31], "26-22":[7,18,25], "26-23":[6,3,10,24],
+  "26-24":[24,28,35], "26-25":[35,38,18,16], "26-27":[18,3,28,40], "26-28":[13,2,28], "26-29":[33,30], "26-30":[35,33,29,31],
+  "26-31":[3,35,40,39], "26-32":[29,1,35,27], "26-33":[35,29,25,10], "26-34":[2,32,10,25], "26-35":[15,3,29], "26-36":[3,13,27,10],
+  "26-37":[3,27,29,18], "26-38":[8,35], "26-39":[13,29,3,27], "27-1":[3,8,10,40], "27-2":[3,10,8,28], "27-3":[15,9,14,4],
+  "27-4":[15,29,28,11], "27-5":[17,10,14,16], "27-6":[32,35,40,4], "27-7":[3,10,14,24], "27-8":[2,35,24], "27-9":[21,35,11,28],
+  "27-10":[8,28,10,3], "27-11":[10,24,35,19], "27-12":[35,1,16,11], "27-14":[11,28], "27-15":[2,35,3,25], "27-16":[34,27,6,40],
+  "27-17":[3,35,10], "27-18":[11,32,13], "27-19":[21,11,27,19], "27-20":[36,23], "27-21":[21,11,26,31], "27-22":[10,11,35],
+  "27-23":[10,35,29,39], "27-24":[10,28], "27-25":[10,30,4], "27-26":[21,28,40,3], "27-28":[32,3,11,23], "27-29":[11,32,1],
+  "27-30":[27,35,2,40], "27-31":[35,2,40,26], "27-33":[27,17,40], "27-34":[1,11], "27-35":[13,35,8,24], "27-36":[13,35,1],
+  "27-37":[27,40,28], "27-38":[11,13,27], "27-39":[1,35,29,38], "28-1":[32,35,26,28], "28-2":[28,35,25,26], "28-3":[28,26,5,16],
+  "28-4":[32,28,3,16], "28-5":[26,28,32,3], "28-6":[26,28,32,3], "28-7":[32,13,6], "28-9":[28,13,32,24], "28-10":[32,2],
+  "28-11":[6,28,32], "28-12":[6,28,32], "28-13":[32,35,13], "28-14":[28,6,32], "28-15":[28,6,32], "28-16":[10,26,24],
+  "28-17":[6,19,28,24], "28-18":[6,1,32], "28-19":[3,6,32], "28-21":[3,6,32], "28-22":[26,32,27], "28-23":[10,16,31,28],
+  "28-25":[24,34,28,32], "28-26":[2,6,32], "28-27":[5,11,1,23], "28-30":[28,24,22,26], "28-31":[3,33,39,10], "28-32":[6,35,25,18],
+  "28-33":[1,13,17,34], "28-34":[1,32,13,11], "28-35":[13,35,2], "28-36":[27,35,10,34], "28-37":[26,24,32,28], "28-38":[28,2,10,34],
+  "28-39":[10,34,28,32], "29-1":[28,32,13,18], "29-2":[28,35,27,9], "29-3":[10,28,29,37], "29-4":[2,32,10], "29-5":[28,33,29,32],
+  "29-6":[2,29,18,36], "29-7":[32,23,2], "29-8":[25,10,35], "29-9":[10,28,32], "29-10":[28,19,34,36], "29-11":[3,35],
+  "29-12":[32,30,40], "29-13":[30,18], "29-14":[3,27], "29-15":[3,27,40], "29-17":[19,26], "29-18":[3,32],
+  "29-19":[32,2], "29-21":[32,2], "29-22":[13,32,2], "29-23":[35,31,10,24], "29-25":[32,26,28,18], "29-26":[32,30],
+  "29-27":[11,32,1], "29-30":[26,28,10,36], "29-31":[4,17,34,26], "29-33":[1,32,35,23], "29-34":[25,10], "29-36":[26,2,18],
+  "29-38":[26,28,18,23], "29-39":[10,18,32,39], "30-1":[22,21,27,39], "30-2":[2,22,13,24], "30-3":[17,1,39,4], "30-4":[1,18],
+  "30-5":[22,1,33,28], "30-6":[27,2,39,35], "30-7":[22,23,37,35], "30-8":[34,39,19,27], "30-9":[21,22,35,28], "30-10":[13,35,39,18],
+  "30-11":[22,2,37], "30-12":[22,1,3,35], "30-13":[35,24,30,18], "30-14":[18,35,37,1], "30-15":[22,15,33,28], "30-16":[17,1,40,33],
+  "30-17":[22,33,35,2], "30-18":[1,19,32,13], "30-19":[1,24,6,27], "30-20":[10,2,22,37], "30-21":[19,22,31,2], "30-22":[21,22,35,2],
+  "30-23":[33,22,19,40], "30-24":[22,10,2], "30-25":[35,18,34], "30-26":[35,33,29,31], "30-27":[27,24,2,40], "30-28":[28,33,23,26],
+  "30-29":[26,28,10,18], "30-32":[24,35,2], "30-33":[2,25,28,39], "30-34":[35,10,2], "30-35":[35,11,22,31], "30-36":[22,19,29,40],
+  "30-37":[22,19,29,40], "30-38":[33,3,34], "30-39":[22,35,13,24], "31-1":[19,22,15,39], "31-2":[35,22,1,39], "31-3":[17,15,16,22],
+  "31-5":[17,2,18,39], "31-6":[22,1,40], "31-7":[17,2,40], "31-8":[30,18,35,4], "31-9":[35,28,3,23], "31-10":[35,28,1,40],
+  "31-11":[2,33,27,18], "31-12":[35,1], "31-13":[35,40,27,39], "31-14":[15,35,22,2], "31-15":[15,22,33,31], "31-16":[21,39,16,22],
+  "31-17":[22,35,2,24], "31-18":[19,24,39,32], "31-19":[2,35,6], "31-20":[19,22,18], "31-21":[2,35,18], "31-22":[21,35,2,22],
+  "31-23":[10,1,34], "31-24":[10,21,29], "31-25":[1,22], "31-26":[3,24,39,1], "31-27":[24,2,40,39], "31-28":[3,33,26],
+  "31-29":[4,17,34,26], "31-36":[19,1,31], "31-37":[2,21,27,1], "31-39":[22,35,18,39], "32-1":[28,29,15,16], "32-2":[1,27,36,13],
+  "32-3":[1,29,13,17], "32-4":[15,17,27], "32-5":[13,1,26,12], "32-6":[16,40], "32-7":[13,29,1,40], "32-9":[35,13,8,1],
+  "32-10":[35,12], "32-11":[35,19,1,37], "32-12":[1,28,13,27], "32-13":[11,13,1], "32-14":[1,3,10,32], "32-15":[27,1,4],
+  "32-16":[35,16], "32-17":[27,26,18], "32-18":[28,24,27,1], "32-19":[28,26,27,1], "32-20":[1,4], "32-21":[27,1,12,24],
+  "32-22":[19,35], "32-23":[15,34,33], "32-24":[32,24,18,16], "32-25":[35,28,34,4], "32-26":[35,23,1,24], "32-28":[1,35,12,18],
+  "32-30":[24,2], "32-33":[2,5,13,16], "32-34":[35,1,11,9], "32-35":[2,13,15], "32-36":[27,26,1], "32-37":[6,28,11,1],
+  "32-38":[8,28,1], "32-39":[35,1,10,28], "33-1":[25,2,13,15], "33-2":[6,13,1,25], "33-3":[1,17,13,12], "33-5":[1,17,13,16],
+  "33-6":[18,16,15,39], "33-7":[1,16,35,15], "33-8":[4,18,39,31], "33-9":[18,13,34], "33-10":[28,13,35], "33-11":[2,32,12],
+  "33-12":[15,34,29,28], "33-13":[32,35,30], "33-14":[32,40,3,28], "33-15":[29,3,8,25], "33-16":[1,16,25], "33-17":[26,27,13],
+  "33-18":[13,17,1,24], "33-19":[1,13,24], "33-21":[35,34,2,10], "33-22":[2,19,13], "33-23":[28,32,2,24], "33-24":[4,10,27,22],
+  "33-25":[4,28,10,34], "33-26":[12,35], "33-27":[17,27,8,40], "33-28":[25,13,2,34], "33-29":[1,32,35,23], "33-30":[2,25,28,39],
+  "33-32":[2,5,12], "33-34":[12,26,1,32], "33-35":[15,34,1,16], "33-36":[32,26,12,17], "33-38":[1,34,12,3], "33-39":[15,1,28],
+  "34-1":[2,27,35,11], "34-2":[2,27,35,11], "34-3":[1,28,10,25], "34-4":[3,18,31], "34-5":[15,13,32], "34-6":[16,25],
+  "34-7":[25,2,35,11], "34-9":[34,9], "34-10":[1,11,10], "34-12":[1,13,2,4], "34-13":[2,35], "34-14":[11,1,2,9],
+  "34-15":[11,29,28,27], "34-17":[4,10], "34-18":[15,1,13], "34-19":[15,1,28,16], "34-21":[15,10,32,2], "34-22":[15,1,32,19],
+  "34-23":[2,35,34,27], "34-25":[32,1,10,25], "34-26":[2,28,10,25], "34-27":[11,10,1,16], "34-28":[10,2,13], "34-29":[25,10],
+  "34-30":[35,10,2,16], "34-32":[1,35,11,10], "34-33":[1,12,26,15], "34-35":[7,1,4,16], "34-36":[35,1,13,11], "34-38":[34,35,7,13],
+  "34-39":[1,32,10], "35-1":[1,6,15,8], "35-2":[19,15,29,16], "35-3":[35,1,29,2], "35-4":[1,35,16], "35-5":[35,30,29,7],
+  "35-6":[15,16], "35-7":[15,35,29], "35-9":[35,10,14], "35-10":[15,17,20], "35-11":[35,16], "35-12":[15,37,1,8],
+  "35-13":[35,30,14], "35-14":[35,3,32,6], "35-15":[13,1,35], "35-16":[2,16], "35-17":[27,2,3,35], "35-18":[6,22,26,1],
+  "35-19":[19,35,29,13], "35-21":[19,1,29], "35-22":[18,15,1], "35-23":[15,10,2,13], "35-25":[35,28], "35-26":[3,35,15],
+  "35-27":[35,13,8,24], "35-28":[35,5,1,10], "35-30":[35,11,32,31], "35-32":[1,13,31], "35-33":[15,34,1,16], "35-34":[1,16,7,4],
+  "35-36":[15,29,37,28], "35-38":[27,34,35], "35-39":[35,28,6,37], "36-1":[26,30,34,36], "36-2":[2,26,35,39], "36-3":[1,19,26,24],
+  "36-5":[14,1,13,16], "36-6":[6,36], "36-7":[34,26,6], "36-8":[1,16], "36-9":[34,10,28], "36-10":[26,16],
+  "36-11":[19,1,35], "36-12":[29,13,28,15], "36-13":[2,22,17,19], "36-14":[2,13,28], "36-15":[10,4,28,15], "36-17":[2,17,13],
+  "36-18":[24,17,13], "36-19":[27,2,29,28], "36-21":[20,19,30,34], "36-22":[10,35,13,2], "36-23":[35,10,28,29], "36-25":[6,29],
+  "36-26":[13,3,27,10], "36-27":[13,35,1], "36-28":[2,26,10,34], "36-29":[26,24,32], "36-30":[22,19,29,40], "36-31":[19,1],
+  "36-32":[27,26,1,13], "36-33":[27,9,26,24], "36-34":[1,13], "36-35":[29,15,28,37], "36-37":[15,10,37,28], "36-38":[15,1,24],
+  "36-39":[12,17,28], "37-1":[27,26,28,13], "37-2":[6,13,28,1], "37-3":[16,17,26,24], "37-5":[2,13,18,17], "37-6":[2,39,30,16],
+  "37-7":[29,1,4,16], "37-8":[2,18,26,31], "37-9":[3,4,16,35], "37-10":[30,28,40,19], "37-11":[35,36,37,32], "37-12":[27,13,1,39],
+  "37-13":[11,22,39,30], "37-14":[27,3,15,28], "37-15":[19,29,39,25], "37-16":[25,34,6,35], "37-17":[3,27,35,16], "37-18":[2,24,26],
+  "37-19":[35,38], "37-20":[19,35,16], "37-21":[18,1,16,10], "37-22":[35,3,15,19], "37-23":[1,18,10,24], "37-24":[35,33,27,22],
+  "37-25":[18,28,32,9], "37-26":[3,27,29,18], "37-27":[27,40,28,8], "37-28":[26,24,32,28], "37-30":[22,19,29,28], "37-31":[2,21],
+  "37-32":[5,28,11,29], "37-33":[2,5], "37-34":[12,26], "37-35":[1,15], "37-36":[15,10,37,28], "37-38":[34,21],
+  "37-39":[35,18], "38-1":[28,26,18,35], "38-2":[28,26,35,10], "38-3":[14,13,17,28], "38-5":[17,14,13], "38-7":[35,13,16],
+  "38-9":[28,10], "38-10":[2,35], "38-11":[13,35], "38-12":[15,32,1,13], "38-13":[18,1], "38-14":[25,13],
+  "38-15":[6,9], "38-17":[26,2,19], "38-18":[8,32,19], "38-19":[2,32,13], "38-21":[28,2,27], "38-22":[23,28],
+  "38-23":[35,10,18,5], "38-24":[35,33], "38-25":[24,28,35,30], "38-26":[35,13], "38-27":[11,27,32], "38-28":[28,26,10,34],
+  "38-29":[28,26,18,23], "38-30":[2,33], "38-32":[1,26,13], "38-33":[1,12,34,3], "38-34":[1,35,13], "38-35":[27,4,1,35],
+  "38-36":[15,24,10], "38-37":[34,27,25], "38-39":[5,12,35,26], "39-1":[35,26,24,37], "39-2":[28,27,15,3], "39-3":[18,4,28,38],
+  "39-4":[30,7,14,26], "39-5":[10,26,34,31], "39-6":[10,35,17,7], "39-7":[2,6,34,10], "39-8":[35,37,10,2], "39-10":[28,15,10,36],
+  "39-11":[10,37,14], "39-12":[14,10,34,40], "39-13":[35,3,22,39], "39-14":[29,28,10,18], "39-15":[35,10,2,18], "39-16":[20,10,16,38],
+  "39-17":[35,21,28,10], "39-18":[26,17,19,1], "39-19":[35,10,38,19], "39-21":[35,20,10], "39-22":[28,10,29,35], "39-23":[28,10,35,23],
+  "39-24":[13,15,23], "39-26":[35,38], "39-27":[1,35,10,38], "39-28":[1,10,34,28], "39-29":[18,10,32,1], "39-30":[22,35,13,24],
+  "39-31":[35,22,18,39], "39-32":[35,28,2,24], "39-33":[1,28,7,10], "39-34":[1,32,10,25], "39-35":[1,35,28,37], "39-36":[12,17,28,24],
+  "39-37":[35,18,27,2], "39-38":[5,12,35,26]
+};
+
+// 39个工程参数的关键词映射（用于演示模式对用户描述做粗略识别，仅为启发式，不是语义理解）。
+// staticId：TRIZ将"运动物体/静止物体"分为不同参数，当描述中出现静止语境时改用该id。
+const PARAM_KEYWORDS = [
+  {id:1, staticId:2, keywords:['重量','轻量化','减重','变轻','变重','太重','太沉','份量']},
+  {id:3, staticId:4, keywords:['长度','太长','太短','加长','缩短']},
+  {id:5, staticId:6, keywords:['面积','占地','占用空间','表面积']},
+  {id:7, staticId:8, keywords:['体积','尺寸','缩小体积','占地方','外形太大']},
+  {id:9, keywords:['速度','太慢','太快','提速','加速','运行速度','响应慢']},
+  {id:10, keywords:['力量','拉力','推力','作用力','受力','扭矩']},
+  {id:11, keywords:['压力','应力','压强']},
+  {id:12, keywords:['形状','造型','外形','外观形状']},
+  {id:13, keywords:['稳定性','不稳定','稳固','晃动','松动']},
+  {id:14, keywords:['强度','坚固','不够结实','容易断','容易碎','易损','耐用性','结实']},
+  {id:15, staticId:16, keywords:['使用寿命','续航','工作时长','耐久','用不了多久']},
+  {id:17, keywords:['温度','发热','散热','过热','太热','太冷','高温','低温']},
+  {id:18, keywords:['亮度','照度','太暗','太亮','光照']},
+  {id:19, staticId:20, keywords:['能耗','耗电','功耗','耗能','费电','电池消耗']},
+  {id:21, keywords:['功率','马力','输出功率']},
+  {id:22, keywords:['能量损失','浪费能量','热损失','能量浪费']},
+  {id:23, keywords:['材料浪费','损耗','原材料浪费','物料浪费','废料']},
+  {id:24, keywords:['信息丢失','数据丢失','信息损失','信号丢失']},
+  {id:25, keywords:['耗时','时间浪费','等待时间','周期长','工期']},
+  {id:26, keywords:['物质数量','用量','材料用量']},
+  {id:27, keywords:['可靠性','故障','容易坏','不可靠','稳定运行','出问题','宕机']},
+  {id:28, keywords:['测量精度','测不准','检测精度']},
+  {id:29, keywords:['制造精度','加工精度','公差','装配精度']},
+  {id:30, keywords:['外部干扰','环境影响','外界影响','受环境影响','外部有害']},
+  {id:31, keywords:['有害','副作用','排放','噪音','噪声','污染','发出异味']},
+  {id:32, keywords:['难以制造','生产难度','制造成本','工艺复杂','不好加工','可制造性']},
+  {id:33, keywords:['难用','操作复杂','上手困难','易用性','操作简单','不好用','学习成本']},
+  {id:34, keywords:['难维护','维修','保养','可维修','换件']},
+  {id:35, keywords:['适应性','通用性','兼容性','适配']},
+  {id:36, keywords:['结构复杂','太复杂','复杂度','零件多']},
+  {id:37, keywords:['检测困难','难以测量','不好检测','难以监控']},
+  {id:38, keywords:['自动化','智能化','人工操作','人工干预','自动']},
+  {id:39, keywords:['生产率','产量','产能','效率提升','吞吐']}
+];
+
+// 否定/排除语境词：出现在关键词前方近距离内时，说明用户在说"不关心这个"，不应计为矛盾参数
+const NEGATION_MARKERS = ['不','无需','不用','没有','不必','不考虑','不在乎','不担心','无所谓','别'];
+// 静止物体语境标记
+const STATIC_MARKERS = ['静止','固定','不动','静置','不运动','固定式'];
+
+// 判断某个位置的关键词是否处于否定语境中（检查前方6个字符的窗口）
+function isNegated(text, idx) {
+  const window = text.slice(Math.max(0, idx - 6), idx);
+  return NEGATION_MARKERS.some(neg => window.includes(neg));
+}
+
+// 从用户描述中识别可能涉及的工程参数（返回按出现先后排列的参数id，最多2个）
+// 注意：这是关键词启发式，无法真正理解语义，识别结果始终以"建议用户确认"的方式呈现。
+function findMentionedParams(text) {
+  const isStaticContext = STATIC_MARKERS.some(m => text.includes(m));
+  const hits = [];
+  for (const entry of PARAM_KEYWORDS) {
+    let earliestIdx = -1;
+    for (const kw of entry.keywords) {
+      let from = 0, idx;
+      // 同一关键词可能多次出现，取第一个非否定语境的位置
+      while ((idx = text.indexOf(kw, from)) !== -1) {
+        if (!isNegated(text, idx)) break;
+        from = idx + kw.length;
+      }
+      if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) earliestIdx = idx;
+    }
+    if (earliestIdx !== -1) {
+      const id = (isStaticContext && entry.staticId) ? entry.staticId : entry.id;
+      hits.push({id, idx: earliestIdx});
+    }
+  }
+  hits.sort((a, b) => a.idx - b.idx);
+  const ids = [];
+  for (const h of hits) if (!ids.includes(h.id)) ids.push(h.id);
+  return ids.slice(0, 2);
+}
+
+// ==================== 状态管理 ====================
+let messages = [];
+let currentStep = 0;
+let isGenerating = false;
+let abortController = null;
+let welcomeElement = null; // 缓存欢迎界面元素，避免被innerHTML清空后丢失
+
+// 结构化分析状态：把六步分析的中间结论显式记录下来，供后续步骤引用，
+// 避免每一步都靠重新猜测文本得出结论（这是六步之间能真正串联的基础）。
+const EMPTY_ANALYSIS = {
+  improveParam: null,   // 改善参数id
+  worsenParam: null,    // 恶化参数id
+  paramSource: null,    // 'manual'(用户在矩阵面板手动选择) | 'keyword'(关键词自动识别)
+  principles: [],       // 已推荐的发明原理id
+  principleSource: null // 'matrix' | 'reverse' | 'heuristic' | 'generic'
+};
+let analysis = { ...EMPTY_ANALYSIS };
+let userIndustry = ''; // 空字符串表示"全部行业"
+
+// 取某个原理的行业案例，用户所属行业的案例排在最前
+function getCasesFor(principleId) {
+  const cases = INDUSTRY_CASES[principleId] || [];
+  if (!userIndustry) return cases;
+  return [...cases].sort((a, b) =>
+    (b.ind === userIndustry ? 1 : 0) - (a.ind === userIndustry ? 1 : 0));
+}
+
+function setIndustry(value) {
+  userIndustry = value;
+  localStorage.setItem('triz_industry', value);
+  renderPrinciples();
+  showToast(value ? `已优先展示「${value}」行业案例` : '已显示全部行业案例', 'success');
+}
+let aiConfig = {
+  provider: 'mock',
+  baseUrl: 'http://localhost:11434/api',
+  apiKey: '',
+  model: 'qwen2.5:7b'
+};
+
+// 加载配置和历史
+function loadState() {
+  const savedConfig = localStorage.getItem('triz_ai_config');
+  if (savedConfig) aiConfig = JSON.parse(savedConfig);
+  
+  userIndustry = localStorage.getItem('triz_industry') || '';
+  const industrySelect = document.getElementById('industrySelect');
+  industrySelect.innerHTML = '<option value="">全部行业</option>' +
+    INDUSTRIES.map(i => `<option value="${i}">${i}</option>`).join('');
+  industrySelect.value = userIndustry;
+
+  const savedAnalysis = localStorage.getItem('triz_analysis');
+  if (savedAnalysis) {
+    try {
+      analysis = { ...EMPTY_ANALYSIS, ...JSON.parse(savedAnalysis) };
+    } catch { analysis = { ...EMPTY_ANALYSIS }; }
+  }
+
+  const savedMessages = localStorage.getItem('triz_chat_history');
+  if (savedMessages) {
+    messages = JSON.parse(savedMessages);
+    currentStep = parseInt(localStorage.getItem('triz_current_step') || '0');
+    renderMessages();
+    if (messages.length > 0) {
+      // 用缓存的引用，不要再 getElementById：上面的 renderMessages 已经用
+      // innerHTML='' 清空了容器，欢迎界面此时已不在文档中，查询会返回 null。
+      if (welcomeElement) welcomeElement.style.display = 'none';
+      document.getElementById('progressBar').style.display = 'flex';
+      updateProgress();
+    }
+  }
+  
+  // 更新设置表单
+  document.getElementById('settingProvider').value = aiConfig.provider;
+  document.getElementById('settingBaseUrl').value = aiConfig.baseUrl;
+  document.getElementById('settingApiKey').value = aiConfig.apiKey;
+  document.getElementById('settingModel').value = aiConfig.model;
+  updateProviderUI();
+}
+
+function saveState() {
+  localStorage.setItem('triz_chat_history', JSON.stringify(messages));
+  localStorage.setItem('triz_current_step', currentStep.toString());
+  localStorage.setItem('triz_analysis', JSON.stringify(analysis));
+}
+
+function saveConfig() {
+  localStorage.setItem('triz_ai_config', JSON.stringify(aiConfig));
+}
+
+// ==================== 初始化 ====================
+function init() {
+  // 初始化缓存DOM元素
+  welcomeElement = document.getElementById('welcomeScreen');
+  renderPrinciples();
+  renderParams();
+  renderMatrixSelects();
+  loadState();
+  setupInput();
+  setupScrollTracking();
+  
+  // 移动端关闭按钮
+  if (window.innerWidth <= 768) {
+    document.getElementById('closePanelBtn').style.display = 'flex';
+  }
+}
+
+function setupInput() {
+  const input = document.getElementById('messageInput');
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    document.getElementById('sendBtn').disabled = this.value.trim() === '';
+  });
+  
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (this.value.trim() && !isGenerating) sendMessage();
+    }
+  });
+}
+
+// ==================== 消息发送与AI回复 ====================
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text || isGenerating) return;
+  
+  // 隐藏欢迎界面（renderMessages会统一处理，这里做兜底）
+  if (welcomeElement) welcomeElement.style.display = 'none';
+  document.getElementById('progressBar').style.display = 'flex';
+  
+  // 添加用户消息。用户刚发言，无论之前是否在看历史，都跳回底部
+  addMessage('user', text);
+  scrollToBottom(true);
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  
+  // 注意：这里不再提前推进进度。
+  // 之前在发送时就先调用一次 updateStepProgress，会把 currentStep 从0推到1，
+  // 导致第一条消息的回复直接跳到"第二步IFR"，用户永远看不到"第一步问题定义"的澄清提问。
+  // 进度统一在回复生成完毕后、结合用户问题与回复内容一起更新（见 generateAIReply）。
+  generateAIReply(text);
+}
+
+function addMessage(role, content) {
+  const msg = {
+    id: Date.now() + Math.random(),
+    role,
+    content,
+    timestamp: new Date().toISOString()
+  };
+  messages.push(msg);
+  saveState();
+  renderMessages();
+  return msg;
+}
+
+function renderMessages() {
+  const container = document.getElementById('messagesContainer');
+  // 缓存welcome元素，避免被innerHTML清空后getElementById返回null
+  if (!welcomeElement) {
+    welcomeElement = document.getElementById('welcomeScreen');
+  }
+  const welcome = welcomeElement;
+
+  // 重建列表会丢失滚动位置。用户正在看历史时，记下位置并在重建后恢复，
+  // 否则会被莫名甩到顶部。
+  const keepScroll = !autoScroll ? container.scrollTop : null;
+
+  // 清空容器
+  container.innerHTML = '';
+  if (messages.length === 0) {
+    container.appendChild(welcome);
+    welcome.style.display = 'flex';
+    return;
+  }
+  welcome.style.display = 'none';
+  
+  messages.forEach(msg => {
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper ${msg.role}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = msg.role === 'ai' ? 'T' : '我';
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = formatMarkdown(msg.content);
+    
+    if (msg.role === 'ai') {
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(bubble);
+    } else {
+      wrapper.appendChild(bubble);
+      wrapper.appendChild(avatar);
+    }
+    
+    container.appendChild(wrapper);
+  });
+
+  if (keepScroll !== null) {
+    container.scrollTop = keepScroll;
+    updateScrollBtn();
+  } else {
+    scrollToBottom();
+  }
+}
+
+// 是否自动跟随最新内容。用户主动上翻查看历史时置为false，
+// 避免生成过程中被不断强制拉回底部（这会让历史消息根本没法读）。
+let autoScroll = true;
+
+function isNearBottom(container, tolerance = 60) {
+  return container.scrollHeight - container.scrollTop - container.clientHeight <= tolerance;
+}
+
+function updateScrollBtn() {
+  const btn = document.getElementById('scrollBottomBtn');
+  if (!btn) return;
+  btn.classList.toggle('show', !autoScroll);
+  // 生成过程中上翻，提示有新内容正在产生
+  document.getElementById('scrollBottomText').textContent = isGenerating ? '正在生成，回到最新' : '回到最新';
+}
+
+// 监听用户滚动。
+// 注意：容器设了 scroll-behavior: smooth，程序设置 scrollTop 会产生滚动动画，
+// 动画过程中会持续派发中间位置的 scroll 事件。因此"停止跟随"必须由真实的用户输入
+// （滚轮/触摸/键盘）来判定，不能只靠 scroll 事件里的位置反推——否则我们自己的
+// 自动滚动动画会被误判成用户在操作。
+// 分工：用户输入 → 停止跟随；位置回到底部 → 恢复跟随。
+function setupScrollTracking() {
+  const container = document.getElementById('messagesContainer');
+
+  const pauseFollow = () => {
+    if (autoScroll) {
+      autoScroll = false;
+      updateScrollBtn();
+    }
+  };
+
+  container.addEventListener('wheel', e => {
+    if (e.deltaY < 0) pauseFollow(); // 仅向上滚动时暂停
+  }, { passive: true });
+
+  container.addEventListener('touchmove', pauseFollow, { passive: true });
+
+  container.addEventListener('keydown', e => {
+    if (['PageUp', 'ArrowUp', 'Home'].includes(e.key)) pauseFollow();
+  });
+
+  // 位置回到底部时恢复自动跟随（用户手动滚回底部，或点了"回到最新"）
+  container.addEventListener('scroll', () => {
+    if (!autoScroll && isNearBottom(container)) {
+      autoScroll = true;
+      updateScrollBtn();
+    }
+  }, { passive: true });
+}
+
+// 点击"回到最新"按钮：这里用平滑滚动，是用户主动触发的、期望看到动画
+function jumpToBottom() {
+  const container = document.getElementById('messagesContainer');
+  autoScroll = true;
+  container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  updateScrollBtn();
+}
+
+// force=true 用于用户自己发消息等场景：无论之前是否上翻，都跳到底部
+function scrollToBottom(force = false) {
+  const container = document.getElementById('messagesContainer');
+  if (force) autoScroll = true;
+  if (!autoScroll) { updateScrollBtn(); return; }
+  requestAnimationFrame(() => {
+    // 必须在回调真正执行时再判断一次：用户可能在本次rAF排队之后才上翻，
+    // 若不重新检查，这个滞留的回调会把页面拽回底部，
+    // 由此触发的滚动事件又会把 autoScroll 误判回 true。
+    if (!autoScroll) return;
+    // 生成过程中的自动跟随用非动画滚动：逐字输出时每次都启动一段平滑动画，
+    // 动画之间会互相打断，反而造成滚动卡顿和位置抖动。
+    container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+  });
+}
+
+// 简易Markdown渲染
+function formatMarkdown(text) {
+  if (!text) return '';
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // 代码块
+  html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  // 行内代码
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 标题
+  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+  // 粗体
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // 斜体
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // 无序列表
+  html = html.replace(/^- (.*$)/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, match => '<ul>' + match + '</ul>');
+  // 有序列表
+  html = html.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+  // 分割线
+  html = html.replace(/^---$/gm, '<hr>');
+  // 引用
+  html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+  // 换行
+  html = html.replace(/\n/g, '<br>');
+  
+  return html;
+}
+
+// ==================== AI回复生成 ====================
+async function generateAIReply(userQuestion) {
+  isGenerating = true;
+  document.getElementById('sendBtn').disabled = true;
+  
+  // 添加AI消息占位，并立即显示等待动画。
+  // 真实AI调用时首个字符到达前可能有数秒网络延迟，没有反馈会让人以为程序卡死。
+  const aiMsg = addMessage('ai', '');
+  const bubble = document.querySelector('.message-wrapper:last-child .message-bubble');
+  bubble.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span>'
+    + `<span class="typing-hint">${aiConfig.provider === 'mock' ? '正在分析…' : 'AI思考中…'}</span></div>`;
+  updateScrollBtn();
+  scrollToBottom();
+
+  try {
+    let fullText = '';
+
+    // 演示模式下我们明确知道即将生成的是第几步，无需事后靠关键词猜测
+    const mockStepIndex = currentStep;
+
+    if (aiConfig.provider === 'mock') {
+      // 演示模式：使用内置规则生成回复
+      fullText = generateMockReply(userQuestion);
+      // 必须回写到消息对象：typeText只更新DOM，若不回写，messages[]里这条AI消息
+      // 永远是空字符串——下次renderMessages重建列表时整条回复就消失了，
+      // 存入localStorage和导出报告的也都是空内容。
+      aiMsg.content = fullText;
+      // 演示模式是瞬时生成的，稍作停顿让等待动画可见，避免界面突兀跳变
+      await new Promise(r => setTimeout(r, 450));
+      // 模拟打字效果
+      await typeText(bubble, fullText);
+    } else {
+      // 真实AI调用
+      const prompt = buildTrizPrompt(userQuestion);
+      const stream = callAIStream(prompt);
+      
+      for await (const chunk of stream) {
+        fullText += chunk;
+        aiMsg.content = fullText;
+        bubble.innerHTML = formatMarkdown(fullText) + '<span class="typing-cursor"></span>';
+        scrollToBottom();
+      }
+      
+      aiMsg.content = fullText;
+      bubble.innerHTML = formatMarkdown(fullText);
+      scrollToBottom(); // 同上：流式结束后的完整渲染也要补一次滚动
+    }
+
+    // 更新步骤
+    if (aiConfig.provider === 'mock') {
+      // 演示模式是确定性的：刚刚展示的就是第 mockStepIndex+1 步，直接据此推进，
+      // 不做关键词扫描。否则每一步回复中"我们进入第X步"的预告会把进度提前带跑，
+      // 导致IFR等步骤被整段跳过。
+      currentStep = Math.min(mockStepIndex + 1, 6);
+      updateProgress();
+    } else {
+      updateStepProgress(userQuestion, fullText);
+    }
+    saveState();
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      aiMsg.content += '\n\n[已停止生成]';
+    } else {
+      aiMsg.content = `AI服务调用失败：${error.message}\n\n请检查AI配置（点击右上角设置按钮），或切换到演示模式体验。`;
+      bubble.innerHTML = formatMarkdown(aiMsg.content);
+    }
+  } finally {
+    isGenerating = false;
+    document.getElementById('sendBtn').disabled = false;
+    updateScrollBtn(); // 生成结束，按钮文案从"正在生成，回到最新"恢复
+  }
+}
+
+// 打字效果
+async function typeText(element, text) {
+  element.innerHTML = '';
+  const chars = text.split('');
+  let current = '';
+  for (let i = 0; i < chars.length; i++) {
+    current += chars[i];
+    element.innerHTML = formatMarkdown(current) + '<span class="typing-cursor"></span>';
+    if (i % 3 === 0) scrollToBottom();
+    await new Promise(r => setTimeout(r, 15));
+  }
+  element.innerHTML = formatMarkdown(text);
+  // 收尾渲染会让内容变高（去掉光标、补全markdown），需要再滚一次，
+  // 否则生成结束时视图停在离底部一段距离的位置，消息末尾被截断。
+  scrollToBottom();
+}
+
+// 构建TRIZ提示词
+function buildTrizPrompt(question) {
+  const history = messages.slice(-6).map(m => 
+    `${m.role === 'user' ? '用户' : '助手'}：${m.content}`
+  ).join('\n');
+  
+  return `你是一位专业的TRIZ（发明问题解决理论）专家顾问。请运用TRIZ理论帮助用户系统性地分析和解决技术难题。
+
+## TRIZ分析六步法
+1. **问题定义与澄清**：明确技术系统、功能目标、问题边界
+2. **IFR理想最终结果**：引导思考零代价、零副作用的完美状态
+3. **矛盾识别**：判断是技术矛盾（改善A导致B恶化）还是物理矛盾（同一参数需相反状态）
+4. **矛盾分析**：技术矛盾用39工程参数+矛盾矩阵；物理矛盾用四大分离原理
+5. **发明原理推荐**：推荐3-4个最相关的40发明原理，结合问题给出应用启发
+6. **解决方案生成**：输出2-3个具体可操作的方案方向
+
+## 对话历史
+${history}
+
+## 用户当前问题
+${question}
+
+请根据当前分析进度，继续引导用户完成TRIZ分析。回复要简洁专业，一步一步引导，不要一次性抛出所有内容。`;
+}
+
+// 调用AI流式接口
+async function* callAIStream(prompt) {
+  const { provider, baseUrl, apiKey, model } = aiConfig;
+  
+  if (provider === 'ollama') {
+    const endpoint = baseUrl.endsWith('/') ? baseUrl + 'generate' : baseUrl + '/generate';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, prompt, stream: true, options: { temperature: 0.7 } })
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const data = JSON.parse(line);
+          if (data.response) yield data.response;
+          if (data.done) return;
+        } catch {}
+      }
+    }
+  } else if (provider === 'openai') {
+    const endpoint = baseUrl.endsWith('/') ? baseUrl + 'chat/completions' : baseUrl + '/chat/completions';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        stream: true,
+        temperature: 0.7
+      })
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
+        const dataStr = trimmed.slice(5).trim();
+        if (dataStr === '[DONE]') return;
+        try {
+          const data = JSON.parse(dataStr);
+          const content = data.choices?.[0]?.delta?.content;
+          if (content) yield content;
+        } catch {}
+      }
+    }
+  }
+}
+
+// 演示模式回复生成
+function generateMockReply(question) {
+  const step = currentStep;
+  
+  if (step === 0 || messages.length <= 1) {
+    return `## 【第一步：问题定义与澄清】
+
+感谢你提出这个问题！在开始TRIZ分析之前，让我先帮你明确问题的边界。
+
+**你描述的问题是：** ${question}
+
+为了更精准地分析，请补充以下信息：
+
+1. **技术系统是什么？** （例如：笔记本电脑外壳、生产线设备、软件系统等）
+2. **系统的主要功能是什么？** （它要完成什么核心任务？）
+3. **当前的痛点或限制是什么？** （具体哪里不满意？）
+4. **有什么约束条件？** （成本、尺寸、材料、法规等）
+
+请逐一回答，我们明确问题后进入第二步——理想最终结果（IFR）分析。`;
+  }
+  
+  if (step === 1) {
+    return `## 【第二步：IFR 理想最终结果分析】
+
+很好，问题已经明确了。现在让我们运用TRIZ中最核心的思维工具——**理想最终结果（IFR）**。
+
+### 什么是IFR？
+IFR是指系统在**不增加复杂性、不增加成本、没有副作用**的前提下，自动完成任务、解决问题。一句话总结：**"功能实现了，代价为零，系统本身消失。"**
+
+### 请思考以下问题：
+
+1. **如果一切都完美了，最理想的状态是什么？** （大胆想象，不受现有技术限制）
+2. **系统中的某个部分能否自己完成所需功能？** （自服务原理）
+3. **能否利用系统中已有的资源（物质、能量、空间、时间、信息）来解决问题？** （资源分析）
+4. **能否让有害因素变成有用因素？** （变害为利原理）
+5. **能否让系统的某个子系统或超系统来承担这项功能？** （系统层次分离）
+
+请描述你心中的理想最终结果，我们将以此为目标寻找解决方案。`;
+  }
+  
+  if (step === 2) {
+    return `## 【第三步：矛盾识别】
+
+非常好！IFR已经明确了。现在我们需要找到通往IFR道路上的核心障碍——**矛盾**。
+
+TRIZ认为，所有创新问题的本质都是矛盾。矛盾分为两类：
+
+### 🔹 技术矛盾
+改善系统的某一个参数，导致另一个参数恶化。
+- 例如：提高速度 → 能耗增加
+- 例如：减轻重量 → 强度下降
+
+### 🔹 物理矛盾
+同一个参数在同一时间需要满足两个相反的需求。
+- 例如：水既要热又要冷
+- 例如：物体既要大又要小
+
+---
+
+**请判断你的问题属于哪种矛盾：**
+
+1. 如果是**技术矛盾**，请告诉我：
+   - 你想改善哪个参数？
+   - 哪个参数会因此恶化？
+
+2. 如果是**物理矛盾**，请告诉我：
+   - 哪个参数需要同时满足相反的需求？
+   - 具体的两个相反需求是什么？
+
+明确矛盾后，我们进入第四步，用TRIZ工具精准求解。`;
+  }
+  
+  if (step === 3) {
+    return `## 【第四步：矛盾分析】
+
+很好，矛盾已经识别出来了。现在我们用TRIZ的专业工具来分析这个矛盾。
+
+### 如果是技术矛盾
+我们使用**39个工程参数**和**矛盾矩阵**来定位解决方案。你可以在右侧"矛盾矩阵"标签页中选择对应的参数，系统会推荐历史上验证有效的发明原理。
+
+### 如果是物理矛盾
+我们使用**四大分离原理**来求解：
+1. **空间分离**：矛盾需求在不同空间满足
+2. **时间分离**：矛盾需求在不同时间满足
+3. **条件分离**：矛盾需求在不同条件下满足
+4. **系统层次分离**：矛盾需求在不同系统层级满足
+
+---
+
+**请告诉我：**
+1. 你的矛盾具体是什么？（改善参数 vs 恶化参数，或相反需求）
+2. 你倾向于用哪种方式来解决这个矛盾？
+
+然后我会为你推荐最相关的发明原理。`;
+  }
+  
+  if (step === 4) {
+    // 参数来源优先级：用户在矩阵面板手动选择 > 关键词自动识别 > 无法识别
+    // 手动选择是用户的明确意图，永远优先于猜测。
+    let pid = null, wid = null, fromManual = false;
+    if (analysis.improveParam && analysis.worsenParam && analysis.paramSource === 'manual') {
+      pid = analysis.improveParam;
+      wid = analysis.worsenParam;
+      fromManual = true;
+    } else {
+      const userText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
+      const mentioned = findMentionedParams(userText);
+      if (mentioned.length === 2) [pid, wid] = mentioned;
+    }
+
+    let recommended, matchNote, principleSource;
+
+    if (pid && wid) {
+      const pName = TRIZ_PARAMS.find(x => x.id === pid)?.name || pid;
+      const wName = TRIZ_PARAMS.find(x => x.id === wid)?.name || wid;
+      const pair = `改善"**${pName}**"、恶化"**${wName}**"`;
+      const origin = fromManual
+        ? `依据你在"矛盾矩阵"面板中选择的参数——${pair}`
+        : `从你的描述中识别到可能的矛盾——${pair}（关键词自动识别，仅供参考，建议到右侧"矛盾矩阵"面板确认）`;
+      const key = `${pid}-${wid}`, reverseKey = `${wid}-${pid}`;
+      if (CONTRADICTION_MATRIX[key]) {
+        recommended = CONTRADICTION_MATRIX[key];
+        principleSource = 'matrix';
+        matchNote = `${origin}，查询经典矛盾矩阵推荐：`;
+      } else if (CONTRADICTION_MATRIX[reverseKey]) {
+        recommended = CONTRADICTION_MATRIX[reverseKey];
+        principleSource = 'reverse';
+        matchNote = `${origin}。该方向未被经典矩阵收录，以下为交换改善/恶化后的反向组合结果，矩阵本身不对称，仅供参考：`;
+      } else {
+        recommended = [1, 10, 15, 35];
+        principleSource = 'heuristic';
+        matchNote = `${origin}，但该组合在经典矛盾矩阵中为空（Altshuller未给出推荐），以下为通用启发式推荐，并非矩阵查询结果：`;
+      }
+    } else {
+      recommended = [1, 15, 35, 40];
+      principleSource = 'generic';
+      matchNote = `暂未能从你的描述中自动识别出具体的工程参数，以下为通用发明原理。建议使用右侧"矛盾矩阵"面板手动选择你的改善/恶化参数，可获得更精确的匹配：`;
+    }
+
+    // 记录本步结论，供第六步引用（六步串联的关键）
+    analysis.improveParam = pid;
+    analysis.worsenParam = wid;
+    if (pid && !fromManual) analysis.paramSource = 'keyword';
+    analysis.principles = recommended;
+    analysis.principleSource = principleSource;
+    saveState();
+
+    const principleNames = recommended.map(id => {
+      const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+      return p ? `**${id}. ${p.name}**` : id;
+    }).join('、');
+
+    return `## 【第五步：发明原理推荐】
+
+${matchNote}
+
+### 🎯 推荐原理：${principleNames}
+
+---
+
+### 原理详解与应用启发：
+
+${recommended.map(id => {
+  const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+  if (!p) return '';
+  const subs = SUB_PRINCIPLES[id] || [];
+  const subList = subs.length
+    ? `**具体做法（子原理）：**\n${subs.map(s => `- ${s}`).join('\n')}\n`
+    : '';
+  const c = getCasesFor(id)[0];
+  const caseLine = c
+    ? `**参考案例［${c.ind}·${c.comp}］：** ${c.prob} → ${c.sol}\n`
+    : `**参考案例：** ${p.examples[0]}\n`;
+  return `#### ${id}. ${p.name}
+**核心思想：** ${p.desc}
+${subList}${caseLine}`;
+}).join('\n')}
+
+---
+
+**请思考：**
+1. 哪个原理最适合你的问题？
+2. 如何将这个原理具体应用到你的技术系统中？
+3. 有没有可能组合多个原理来解决问题？
+
+告诉我你的想法，我们进入最后一步——生成具体的解决方案。`;
+  }
+  
+  // ===== 第六步：基于前面各步实际得出的结论生成方案，而不是套用通用模板 =====
+  const firstProblem = messages.find(m => m.role === 'user')?.content || '（未记录）';
+  const impName = analysis.improveParam ? (TRIZ_PARAMS.find(x => x.id === analysis.improveParam)?.name) : null;
+  const worName = analysis.worsenParam ? (TRIZ_PARAMS.find(x => x.id === analysis.worsenParam)?.name) : null;
+  const chosen = (analysis.principles && analysis.principles.length) ? analysis.principles : [1, 15, 35, 40];
+
+  const contradictionLine = (impName && worName)
+    ? `改善「${impName}」时「${worName}」会恶化`
+    : '尚未明确到具体的工程参数（建议回到第4步用矛盾矩阵面板确认）';
+
+  // 标签本身不带括号，避免在下方句子中被再次套上括号形成嵌套
+  const sourceLabel = {
+    matrix: 'Altshuller经典矛盾矩阵直接命中',
+    reverse: '矩阵反向组合，仅供参考',
+    heuristic: '通用启发式，该矩阵单元格为空',
+    generic: '通用推荐，未识别出具体参数'
+  }[analysis.principleSource] || '通用推荐';
+
+  // 每个推荐原理生成一个具体的方案方向，把抽象原理转成对用户系统的追问
+  const directions = chosen.map((id, i) => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    if (!p) return '';
+    const subs = SUB_PRINCIPLES[id] || [];
+    const subList = subs.length
+      ? `**可尝试的具体做法：**\n${subs.map(s => `- ${s}`).join('\n')}\n`
+      : '';
+    return `#### 方向${i + 1}：运用原理 ${id}「${p.name}」
+**原理含义：** ${p.desc}
+${subList}${(() => {
+      const cs = getCasesFor(id).slice(0, 2);
+      return cs.length
+        ? `**可借鉴的行业案例：**\n${cs.map(c => `- ［${c.ind}·${c.comp}］${c.prob} → ${c.sol}`).join('\n')}\n`
+        : `**可借鉴的案例：** ${p.examples.slice(0, 2).join('；')}\n`;
+    })()}
+**落到你的系统上，请自问：**
+- 上面哪一条具体做法，在你的系统中最有可能落地？对应改造哪个部件或环节？
+- 这样改造后，「${impName || '你想改善的指标'}」改善了多少？「${worName || '担心恶化的指标'}」是否真的没有变差？
+- 实现它需要付出什么代价（成本、工艺、可靠性）？是否仍然满足第2步定义的IFR？`;
+  }).filter(Boolean).join('\n\n');
+
+  const caveat = (analysis.principleSource === 'matrix')
+    ? ''
+    : `\n> ⚠️ 注意：本次推荐来源为「${sourceLabel}」，并非经典矩阵对该矛盾的直接命中结果，请结合实际情况判断，必要时回到第4步重新确认参数。\n`;
+
+  return `## 【第六步：解决方案生成】
+
+经过完整的TRIZ六步分析，我们把前面的结论收敛为可执行的方案方向。
+
+---
+
+### 📋 分析回顾
+- **原始问题：** ${firstProblem}
+- **核心矛盾：** ${contradictionLine}
+- **推荐原理：** ${chosen.map(id => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    return p ? `${id}.${p.name}` : id;
+  }).join('、')}（${sourceLabel}）
+${caveat}
+---
+
+### 💡 解决方案方向
+
+${directions}
+
+---
+
+### 🔀 进阶：组合与转移
+- **组合原理：** 上述方向并非互斥。试着把其中2个组合起来（例如用一个解决主要矛盾、另一个补偿副作用），往往能得到更完整的方案。
+- **系统层次转移：** 如果在当前系统层面难以化解矛盾，考虑把功能上移到超系统（借用外部已有资源）或下移到子系统（改变材料/微观结构）。
+
+---
+
+### ✅ 下一步行动
+1. **筛选**：上述方向中，哪一个在你的成本和工艺约束下最可行？
+2. **细化**：选定后，把它落成具体的结构/参数改动方案
+3. **验证**：通过原型、仿真或实验验证效果与副作用
+4. **专利挖掘**：若形成了新的技术方案，可考虑专利布局
+
+---
+
+需要我针对某个方向进一步展开吗？或者你想回到某一步重新分析？`;
+}
+
+// 更新步骤进度（智能识别 + 轮次启发式）
+function updateStepProgress(question, reply) {
+  const fullText = (question || '') + ' ' + (reply || '');
+  let detectedStep = currentStep;
+
+  // ===== 关键词匹配（扩展同义词）=====
+  // 第1步：问题定义
+  if (/(问题定义|技术系统|主要功能|核心功能|痛点|约束条件|明确问题|问题描述|遇到的问题)/.test(fullText)) {
+    detectedStep = Math.max(detectedStep, 1);
+  }
+  // 第2步：IFR理想最终结果
+  if (/(IFR|理想最终结果|理想状态|最理想|完美状态|零代价|零成本|自动完成|自我实现|资源分析)/.test(fullText)) {
+    detectedStep = Math.max(detectedStep, 2);
+  }
+  // 第3步：矛盾识别
+  if (/(矛盾识别|技术矛盾|物理矛盾|改善.*参数|恶化.*参数|相反需求|既要.*又要|矛盾点|核心矛盾)/.test(fullText)) {
+    detectedStep = Math.max(detectedStep, 3);
+  }
+  // 第4步：矛盾分析
+  if (/(矛盾分析|分离原理|空间分离|时间分离|条件分离|系统层次分离|工程参数|矛盾矩阵|39个参数|改善项|恶化项|矩阵查询)/.test(fullText)) {
+    detectedStep = Math.max(detectedStep, 4);
+  }
+  // 第5步：发明原理推荐（检查是否提到原理相关词汇或40原理名称）
+  const principleKeywords = /(发明原理|推荐原理|原理|分割|抽取|局部质量|非对称|合并|多用性|嵌套|反重量|预先反作用|预先作用|预先防范|等势|反向作用|曲面化|动态化|另一维度|机械振动|周期性作用|变害为利|反馈|中介物|自服务|复制|廉价替代品|机械系统替代|气压或液压|柔性壳体|多孔材料|颜色改变|同质性|参数改变|相变|热膨胀|强氧化剂|惰性环境|复合材料)/;
+  if (principleKeywords.test(fullText) && detectedStep >= 3) {
+    detectedStep = Math.max(detectedStep, 5);
+  }
+  // 第6步：解决方案生成
+  if (/(解决方案|方案生成|具体方案|技术方案|实施方案|落地|实施建议|下一步行动|评估方案|细化方案|方案一|方案二|方案三|推荐方案|解决思路)/.test(fullText)) {
+    detectedStep = Math.max(detectedStep, 6);
+  }
+
+  // ===== 基于对话轮次的温和推进 =====
+  // 说明：轮次多只能说明聊得久，不能说明分析真的做扎实了。
+  // 早期版本会在对话超过8/12轮时把进度强制跳到第5/6步，即使用户根本没讲清矛盾，
+  // 这会让人误以为已经完成了严谨分析。现在改为：轮次最多把进度往前带1步，
+  // 且封顶在第4步——进入"原理推荐/方案生成"必须由实际内容（关键词或已识别的参数）触发。
+  const userMessageCount = messages.filter(m => m.role === 'user').length;
+  const roundBasedStep = Math.min(userMessageCount, 4);
+  detectedStep = Math.max(detectedStep, Math.min(roundBasedStep, detectedStep + 1));
+
+  // 已经明确识别出改善/恶化参数时，说明矛盾分析这一步确实完成了
+  if (analysis.improveParam && analysis.worsenParam) {
+    detectedStep = Math.max(detectedStep, 4);
+  }
+
+  // 一轮对话最多推进一步。AI回复中常会预告后续步骤（"接下来我们做矛盾分析…"），
+  // 若不加限制，关键词扫描会一次跨越多步，让中间步骤被跳过。
+  detectedStep = Math.min(detectedStep, currentStep + 1);
+
+  currentStep = detectedStep;
+  updateProgress();
+  saveState();
+}
+
+function updateProgress() {
+  const steps = document.querySelectorAll('.progress-step');
+  steps.forEach((step, index) => {
+    const stepNum = index + 1;
+    step.classList.remove('active', 'completed', 'pending');
+    if (stepNum < currentStep) {
+      step.classList.add('completed');
+      step.querySelector('.step-dot').textContent = '✓';
+    } else if (stepNum === currentStep) {
+      step.classList.add('active');
+      step.querySelector('.step-dot').textContent = stepNum;
+    } else {
+      step.classList.add('pending');
+      step.querySelector('.step-dot').textContent = stepNum;
+    }
+  });
+}
+
+// 手动点击进度条调整步骤
+function setStepManually(stepNum) {
+  if (stepNum < 1 || stepNum > 6) return;
+  currentStep = stepNum;
+  updateProgress();
+  saveState();
+  showToast(`已切换到第${stepNum}步：${['问题定义','IFR分析','矛盾识别','矛盾分析','原理推荐','方案生成'][stepNum-1]}`, 'success');
+}
+
+// ==================== 知识库渲染 ====================
+function renderPrinciples(filter = '') {
+  const container = document.getElementById('principlesList');
+  const filtered = TRIZ_PRINCIPLES.filter(p => 
+    p.name.includes(filter) || p.desc.includes(filter) || p.id.toString() === filter
+  );
+  
+  container.innerHTML = filtered.map(p => `
+    <div class="principle-card" onclick="showPrincipleDetail(${p.id})">
+      <div class="principle-card-header">
+        <span class="principle-number">${p.id}</span>
+        <span class="principle-name">${p.name}</span>
+      </div>
+      <div class="principle-desc">${p.desc}</div>
+    </div>
+  `).join('');
+}
+
+function filterPrinciples() {
+  const keyword = document.getElementById('principleSearch').value.trim();
+  renderPrinciples(keyword);
+}
+
+function renderParams() {
+  const container = document.getElementById('paramsList');
+  const categories = [...new Set(TRIZ_PARAMS.map(p => p.category))];
+  
+  container.innerHTML = categories.map(cat => `
+    <div class="param-category">
+      <div class="param-category-title">${cat}</div>
+      ${TRIZ_PARAMS.filter(p => p.category === cat).map(p => `
+        <div class="param-item">
+          <span class="param-id">${p.id}</span>
+          <span>${p.name}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function renderMatrixSelects() {
+  const improve = document.getElementById('improveParam');
+  const worsen = document.getElementById('worsenParam');
+  
+  const options = TRIZ_PARAMS.map(p => `<option value="${p.id}">${p.id}. ${p.name}</option>`).join('');
+  improve.innerHTML = '<option value="">请选择...</option>' + options;
+  worsen.innerHTML = '<option value="">请选择...</option>' + options;
+}
+
+function queryMatrix() {
+  const improve = document.getElementById('improveParam').value;
+  const worsen = document.getElementById('worsenParam').value;
+  const result = document.getElementById('matrixResult');
+  const principles = document.getElementById('matrixPrinciples');
+  const title = document.getElementById('matrixResultTitle');
+  const note = document.getElementById('matrixResultNote');
+
+  if (!improve || !worsen) {
+    result.style.display = 'none';
+    return;
+  }
+
+  result.style.display = 'block';
+
+  if (improve === worsen) {
+    title.textContent = '提示';
+    note.style.display = 'block';
+    note.textContent = '改善参数和恶化参数相同，不构成矛盾，请重新选择。';
+    principles.innerHTML = '';
+    return;
+  }
+
+  // 用户手动选择的参数是明确意图，记录下来供对话中的第五步优先采用
+  analysis.improveParam = parseInt(improve);
+  analysis.worsenParam = parseInt(worsen);
+  analysis.paramSource = 'manual';
+  saveState();
+
+  const key = `${improve}-${worsen}`;
+  const reverseKey = `${worsen}-${improve}`;
+  let recommended = CONTRADICTION_MATRIX[key];
+
+  if (recommended) {
+    title.textContent = '推荐发明原理（经典矩阵）';
+    note.style.display = 'none';
+  } else if (CONTRADICTION_MATRIX[reverseKey]) {
+    // 矩阵本身不对称，正向组合未收录时，反向组合的结果仅供参考，不能直接当作本方向的答案
+    recommended = CONTRADICTION_MATRIX[reverseKey];
+    title.textContent = '推荐发明原理（反向组合参考）';
+    note.style.display = 'block';
+    note.textContent = '⚠ Altshuller矩阵中该方向（改善→恶化）未收录对应原理，以下为交换改善/恶化后的反向组合结果，仅供参考，矩阵本身不对称，不代表本方向的官方答案。';
+  } else {
+    // 经典矩阵中该单元格为空（Altshuller未给出推荐），以下为启发式兜底，并非矩阵结果
+    recommended = [1, 10, 15, 35];
+    title.textContent = '推荐发明原理（启发式，非经典矩阵）';
+    note.style.display = 'block';
+    note.textContent = '⚠ 该改善/恶化参数组合在Altshuller经典矩阵中为空（未给出推荐），以下为通用启发式推荐，仅供参考，请结合具体问题人工判断，不要当作矩阵查询结果。';
+  }
+
+  principles.innerHTML = recommended.map(id => {
+    const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+    return `<span class="matrix-principle-tag" onclick="showPrincipleDetail(${id})" style="cursor:pointer;">${id}. ${p?.name || id}</span>`;
+  }).join('');
+}
+
+function showPrincipleDetail(id) {
+  const p = TRIZ_PRINCIPLES.find(x => x.id === id);
+  if (!p) return;
+  
+  document.getElementById('modalTitle').innerHTML = `
+    <span class="principle-number">${p.id}</span>
+    ${p.name}
+  `;
+  
+  const subs = SUB_PRINCIPLES[p.id] || [];
+  const subSection = subs.length ? `
+    <div class="modal-section">
+      <div class="modal-section-title">子原理（具体做法）</div>
+      <ul class="modal-examples">
+        ${subs.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-title">原理说明</div>
+      <div class="modal-section-content">${p.desc}</div>
+    </div>
+    ${subSection}
+    <div class="modal-section">
+      <div class="modal-section-title">行业案例${
+        !userIndustry ? ''
+          : (INDUSTRY_CASES[p.id] || []).some(c => c.ind === userIndustry)
+            ? `（${userIndustry}优先）`
+            : `（本原理暂无${userIndustry}案例，展示其他行业）`
+      }</div>
+      <ul class="modal-examples">
+        ${getCasesFor(p.id).map(c => `<li>
+          <strong>［${c.ind}·${c.comp}］</strong><br>
+          <span style="color:var(--text-muted);">问题：</span>${c.prob}<br>
+          <span style="color:var(--text-muted);">方案：</span>${c.sol}
+        </li>`).join('')}
+      </ul>
+      <div style="font-size:11px;color:var(--text-light);margin-top:6px;line-height:1.5;">
+        以上为通用工程实践中的典型做法示例，用于说明原理如何落地，非取自已验证的专利/项目案例库。
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">通用案例</div>
+      <ul class="modal-examples">
+        ${p.examples.map(e => `<li>${e}</li>`).join('')}
+      </ul>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">应用提示</div>
+      <div class="modal-section-content">
+        尝试将此原理应用到你的问题中：思考系统中哪个部分可以按照"${p.name}"的思路进行改变？
+        可以结合右侧矛盾矩阵，找到与你问题最匹配的原理组合。
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('principleModal').classList.add('show');
+}
+
+// ==================== UI交互 ====================
+function switchTab(tabName) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.panel-tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('show');
+}
+
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('show');
+  updateProviderUI();
+}
+
+function updateProviderUI() {
+  const provider = document.getElementById('settingProvider').value;
+  document.getElementById('apiKeyGroup').style.display = provider === 'openai' ? 'block' : 'none';
+  document.getElementById('baseUrlGroup').style.display = provider === 'mock' ? 'none' : 'block';
+  document.getElementById('modelGroup').style.display = provider === 'mock' ? 'none' : 'block';
+  document.getElementById('testGroup').style.display = provider === 'mock' ? 'none' : 'block';
+  // 切换服务类型时清除之前的测试结果
+  document.getElementById('testResult').style.display = 'none';
+}
+
+document.getElementById('settingProvider').addEventListener('change', updateProviderUI);
+
+function saveSettings() {
+  aiConfig = {
+    provider: document.getElementById('settingProvider').value,
+    baseUrl: document.getElementById('settingBaseUrl').value,
+    apiKey: document.getElementById('settingApiKey').value,
+    model: document.getElementById('settingModel').value
+  };
+  saveConfig();
+  closeModal('settingsModal');
+  showToast('AI配置已保存', 'success');
+}
+
+// 测试AI连接
+async function testAIConnection() {
+  const provider = document.getElementById('settingProvider').value;
+  const baseUrl = document.getElementById('settingBaseUrl').value.trim();
+  const apiKey = document.getElementById('settingApiKey').value.trim();
+  const model = document.getElementById('settingModel').value.trim();
+
+  const testBtn = document.getElementById('testBtn');
+  const testBtnText = document.getElementById('testBtnText');
+  const testResult = document.getElementById('testResult');
+
+  // 演示模式不需要测试
+  if (provider === 'mock') {
+    testResult.style.display = 'block';
+    testResult.style.background = '#fef3c7';
+    testResult.style.color = '#92400e';
+    testResult.style.border = '1px solid #fcd34d';
+    testResult.innerHTML = '⚠️ <strong>演示模式</strong>：使用内置TRIZ规则回复，无需连接AI服务，可直接使用。';
+    return;
+  }
+
+  // 校验输入
+  if (!baseUrl) {
+    showTestResult('error', '❌ 请填写API地址');
+    return;
+  }
+  if (!model) {
+    showTestResult('error', '❌ 请填写模型名称');
+    return;
+  }
+
+  // 按钮进入加载状态
+  testBtn.disabled = true;
+  testBtnText.innerHTML = '⏳ 测试中...';
+  testResult.style.display = 'none';
+
+  const startTime = Date.now();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
+  try {
+    let endpoint, response, responseData;
+
+    if (provider === 'ollama') {
+      // Ollama 测试：先检查服务是否运行，再测试模型
+      endpoint = baseUrl.endsWith('/') ? baseUrl + 'generate' : baseUrl + '/generate';
+      
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model,
+          prompt: '你好，请只回复"连接成功"四个字。',
+          stream: false,
+          options: { temperature: 0.1, num_predict: 20 }
+        }),
+        signal: controller.signal
+      });
+    } else {
+      // OpenAI 兼容 API 测试
+      endpoint = baseUrl.endsWith('/') ? baseUrl + 'chat/completions' : baseUrl + '/chat/completions';
+      
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: 'user', content: '你好，请只回复"连接成功"四个字。' }],
+          max_tokens: 20,
+          temperature: 0.1
+        }),
+        signal: controller.signal
+      });
+    }
+
+    const elapsed = Date.now() - startTime;
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '无错误详情');
+      let errorMsg = `HTTP ${response.status}`;
+      
+      if (response.status === 401) errorMsg += '（API Key无效或缺失）';
+      else if (response.status === 404) errorMsg += '（地址或模型不存在，请检查API地址和模型名称）';
+      else if (response.status === 429) errorMsg += '（请求过于频繁，请稍后重试）';
+      else if (response.status === 500) errorMsg += '（服务器内部错误）';
+      
+      showTestResult('error', `❌ <strong>连接失败</strong><br>状态码：${errorMsg}<br>耗时：${elapsed}ms<br>详情：${errorText.substring(0, 200)}`);
+      return;
+    }
+
+    // 解析响应
+    responseData = await response.json();
+    let replyText = '';
+    
+    if (provider === 'ollama') {
+      replyText = responseData.response || '';
+    } else {
+      replyText = responseData.choices?.[0]?.message?.content || '';
+    }
+
+    // 检查返回内容
+    if (!replyText.trim()) {
+      showTestResult('warning', `⚠️ <strong>连接成功但返回为空</strong><br>耗时：${elapsed}ms<br>模型可能未正确加载，建议检查模型是否已下载。`);
+      return;
+    }
+
+    showTestResult('success', `✅ <strong>连接成功！</strong><br>模型：${model}<br>耗时：${elapsed}ms<br>模型回复："${replyText.trim().substring(0, 50)}"`);
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+    const elapsed = Date.now() - startTime;
+
+    if (error.name === 'AbortError') {
+      showTestResult('error', `❌ <strong>连接超时</strong><br>耗时：${elapsed}ms（超过30秒）<br>请检查网络连接或服务是否正常运行。`);
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      showTestResult('error', `❌ <strong>网络连接失败</strong><br>无法连接到 ${baseUrl}<br>可能原因：<br>1. 服务未启动（Ollama需先运行）<br>2. 地址错误<br>3. 跨域限制（CORS）<br>4. 防火墙拦截`);
+    } else {
+      showTestResult('error', `❌ <strong>测试失败</strong><br>错误：${error.message}<br>耗时：${elapsed}ms`);
+    }
+  } finally {
+    testBtn.disabled = false;
+    testBtnText.innerHTML = '🔌 测试连接';
+  }
+}
+
+function showTestResult(type, html) {
+  const testResult = document.getElementById('testResult');
+  testResult.style.display = 'block';
+  
+  if (type === 'success') {
+    testResult.style.background = '#dcfce7';
+    testResult.style.color = '#166534';
+    testResult.style.border = '1px solid #86efac';
+  } else if (type === 'error') {
+    testResult.style.background = '#fee2e2';
+    testResult.style.color = '#991b1b';
+    testResult.style.border = '1px solid #fca5a5';
+  } else {
+    testResult.style.background = '#fef3c7';
+    testResult.style.color = '#92400e';
+    testResult.style.border = '1px solid #fcd34d';
+  }
+  
+  testResult.innerHTML = html;
+}
+
+function newChat() {
+  if (messages.length > 0 && !confirm('确定要开始新对话吗？当前对话记录将被清空。')) return;
+  messages = [];
+  currentStep = 0;
+  analysis = { ...EMPTY_ANALYSIS };
+  saveState();
+  renderMessages();
+  document.getElementById('progressBar').style.display = 'none';
+  // renderMessages已处理welcome显示，这里做兜底
+  if (welcomeElement) welcomeElement.style.display = 'flex';
+  showToast('已开始新对话', 'success');
+}
+
+function useExample(text) {
+  document.getElementById('messageInput').value = text;
+  document.getElementById('messageInput').dispatchEvent(new Event('input'));
+  sendMessage();
+}
+
+function exportReport() {
+  if (messages.length === 0) {
+    showToast('暂无对话记录可导出', 'error');
+    return;
+  }
+  
+  let report = '========================================\n';
+  report += '       TRIZ 智能体 - 分析报告\n';
+  report += '========================================\n\n';
+  report += `生成时间：${new Date().toLocaleString('zh-CN')}\n`;
+  report += `分析步骤：已完成 ${currentStep}/6 步\n\n`;
+  report += '----------------------------------------\n';
+  report += '              对话记录\n';
+  report += '----------------------------------------\n\n';
+  
+  messages.forEach(msg => {
+    const role = msg.role === 'user' ? '👤 用户' : '🤖 TRIZ助手';
+    report += `【${role}】\n${msg.content}\n\n`;
+  });
+  
+  report += '----------------------------------------\n';
+  report += '            报告结束\n';
+  report += '----------------------------------------\n';
+  
+  const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TRIZ分析报告_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('报告已导出', 'success');
+}
+
+function togglePanel() {
+  const panel = document.getElementById('knowledgePanel');
+  const overlay = document.getElementById('panelOverlay');
+  panel.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+
+function showToast(message, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// 点击弹窗外部关闭
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+
+// 初始化
+init();
+</script>
+</body>
+</html>
