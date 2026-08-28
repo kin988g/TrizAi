@@ -340,6 +340,86 @@ body {
   51%, 100% { opacity: 0; }
 }
 
+/* 等待AI首个字符到达时的三点动画 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.typing-indicator span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-light);
+  animation: typingBounce 1.2s infinite ease-in-out;
+  flex-shrink: 0; /* 不参与压缩，否则圆点会被挤扁 */
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+.typing-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 8px;
+  white-space: nowrap; /* 气泡很窄，不加会被逐字换行成竖排 */
+  animation: none;     /* 不要继承圆点的跳动动画 */
+  width: auto;
+  height: auto;
+  background: none;
+  border-radius: 0;
+}
+
+/* 用户上翻查看历史时出现的"回到底部"按钮 */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 7px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.scroll-bottom-btn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.scroll-bottom-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* 消息区需要定位上下文，供"回到底部"按钮绝对定位 */
+.chat-body {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* 欢迎界面 */
 .welcome-screen {
   display: flex;
@@ -989,6 +1069,7 @@ body {
     </div>
 
     <!-- 消息列表 -->
+    <div class="chat-body">
     <div class="messages-container" id="messagesContainer">
       <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-logo">TRIZ</div>
@@ -1013,6 +1094,11 @@ body {
           </div>
         </div>
       </div>
+    </div>
+      <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="jumpToBottom()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><polyline points="19 12 12 19 5 12"/></svg>
+        <span id="scrollBottomText">回到最新</span>
+      </button>
     </div>
 
     <!-- 输入区域 -->
@@ -1779,7 +1865,9 @@ function loadState() {
     currentStep = parseInt(localStorage.getItem('triz_current_step') || '0');
     renderMessages();
     if (messages.length > 0) {
-      document.getElementById('welcomeScreen').style.display = 'none';
+      // 用缓存的引用，不要再 getElementById：上面的 renderMessages 已经用
+      // innerHTML='' 清空了容器，欢迎界面此时已不在文档中，查询会返回 null。
+      if (welcomeElement) welcomeElement.style.display = 'none';
       document.getElementById('progressBar').style.display = 'flex';
       updateProgress();
     }
@@ -1812,6 +1900,7 @@ function init() {
   renderMatrixSelects();
   loadState();
   setupInput();
+  setupScrollTracking();
   
   // 移动端关闭按钮
   if (window.innerWidth <= 768) {
@@ -1845,8 +1934,9 @@ function sendMessage() {
   if (welcomeElement) welcomeElement.style.display = 'none';
   document.getElementById('progressBar').style.display = 'flex';
   
-  // 添加用户消息
+  // 添加用户消息。用户刚发言，无论之前是否在看历史，都跳回底部
   addMessage('user', text);
+  scrollToBottom(true);
   input.value = '';
   input.style.height = 'auto';
   document.getElementById('sendBtn').disabled = true;
@@ -1878,7 +1968,11 @@ function renderMessages() {
     welcomeElement = document.getElementById('welcomeScreen');
   }
   const welcome = welcomeElement;
-  
+
+  // 重建列表会丢失滚动位置。用户正在看历史时，记下位置并在重建后恢复，
+  // 否则会被莫名甩到顶部。
+  const keepScroll = !autoScroll ? container.scrollTop : null;
+
   // 清空容器
   container.innerHTML = '';
   if (messages.length === 0) {
@@ -1910,15 +2004,88 @@ function renderMessages() {
     
     container.appendChild(wrapper);
   });
-  
-  scrollToBottom();
+
+  if (keepScroll !== null) {
+    container.scrollTop = keepScroll;
+    updateScrollBtn();
+  } else {
+    scrollToBottom();
+  }
 }
 
-function scrollToBottom() {
+// 是否自动跟随最新内容。用户主动上翻查看历史时置为false，
+// 避免生成过程中被不断强制拉回底部（这会让历史消息根本没法读）。
+let autoScroll = true;
+
+function isNearBottom(container, tolerance = 60) {
+  return container.scrollHeight - container.scrollTop - container.clientHeight <= tolerance;
+}
+
+function updateScrollBtn() {
+  const btn = document.getElementById('scrollBottomBtn');
+  if (!btn) return;
+  btn.classList.toggle('show', !autoScroll);
+  // 生成过程中上翻，提示有新内容正在产生
+  document.getElementById('scrollBottomText').textContent = isGenerating ? '正在生成，回到最新' : '回到最新';
+}
+
+// 监听用户滚动。
+// 注意：容器设了 scroll-behavior: smooth，程序设置 scrollTop 会产生滚动动画，
+// 动画过程中会持续派发中间位置的 scroll 事件。因此"停止跟随"必须由真实的用户输入
+// （滚轮/触摸/键盘）来判定，不能只靠 scroll 事件里的位置反推——否则我们自己的
+// 自动滚动动画会被误判成用户在操作。
+// 分工：用户输入 → 停止跟随；位置回到底部 → 恢复跟随。
+function setupScrollTracking() {
   const container = document.getElementById('messagesContainer');
-  setTimeout(() => {
-    container.scrollTop = container.scrollHeight;
-  }, 50);
+
+  const pauseFollow = () => {
+    if (autoScroll) {
+      autoScroll = false;
+      updateScrollBtn();
+    }
+  };
+
+  container.addEventListener('wheel', e => {
+    if (e.deltaY < 0) pauseFollow(); // 仅向上滚动时暂停
+  }, { passive: true });
+
+  container.addEventListener('touchmove', pauseFollow, { passive: true });
+
+  container.addEventListener('keydown', e => {
+    if (['PageUp', 'ArrowUp', 'Home'].includes(e.key)) pauseFollow();
+  });
+
+  // 位置回到底部时恢复自动跟随（用户手动滚回底部，或点了"回到最新"）
+  container.addEventListener('scroll', () => {
+    if (!autoScroll && isNearBottom(container)) {
+      autoScroll = true;
+      updateScrollBtn();
+    }
+  }, { passive: true });
+}
+
+// 点击"回到最新"按钮：这里用平滑滚动，是用户主动触发的、期望看到动画
+function jumpToBottom() {
+  const container = document.getElementById('messagesContainer');
+  autoScroll = true;
+  container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  updateScrollBtn();
+}
+
+// force=true 用于用户自己发消息等场景：无论之前是否上翻，都跳到底部
+function scrollToBottom(force = false) {
+  const container = document.getElementById('messagesContainer');
+  if (force) autoScroll = true;
+  if (!autoScroll) { updateScrollBtn(); return; }
+  requestAnimationFrame(() => {
+    // 必须在回调真正执行时再判断一次：用户可能在本次rAF排队之后才上翻，
+    // 若不重新检查，这个滞留的回调会把页面拽回底部，
+    // 由此触发的滚动事件又会把 autoScroll 误判回 true。
+    if (!autoScroll) return;
+    // 生成过程中的自动跟随用非动画滚动：逐字输出时每次都启动一段平滑动画，
+    // 动画之间会互相打断，反而造成滚动卡顿和位置抖动。
+    container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+  });
 }
 
 // 简易Markdown渲染
@@ -1961,19 +2128,30 @@ async function generateAIReply(userQuestion) {
   isGenerating = true;
   document.getElementById('sendBtn').disabled = true;
   
-  // 添加AI消息占位
+  // 添加AI消息占位，并立即显示等待动画。
+  // 真实AI调用时首个字符到达前可能有数秒网络延迟，没有反馈会让人以为程序卡死。
   const aiMsg = addMessage('ai', '');
   const bubble = document.querySelector('.message-wrapper:last-child .message-bubble');
-  
+  bubble.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span>'
+    + `<span class="typing-hint">${aiConfig.provider === 'mock' ? '正在分析…' : 'AI思考中…'}</span></div>`;
+  updateScrollBtn();
+  scrollToBottom();
+
   try {
     let fullText = '';
-    
+
     // 演示模式下我们明确知道即将生成的是第几步，无需事后靠关键词猜测
     const mockStepIndex = currentStep;
 
     if (aiConfig.provider === 'mock') {
       // 演示模式：使用内置规则生成回复
       fullText = generateMockReply(userQuestion);
+      // 必须回写到消息对象：typeText只更新DOM，若不回写，messages[]里这条AI消息
+      // 永远是空字符串——下次renderMessages重建列表时整条回复就消失了，
+      // 存入localStorage和导出报告的也都是空内容。
+      aiMsg.content = fullText;
+      // 演示模式是瞬时生成的，稍作停顿让等待动画可见，避免界面突兀跳变
+      await new Promise(r => setTimeout(r, 450));
       // 模拟打字效果
       await typeText(bubble, fullText);
     } else {
@@ -1990,8 +2168,9 @@ async function generateAIReply(userQuestion) {
       
       aiMsg.content = fullText;
       bubble.innerHTML = formatMarkdown(fullText);
+      scrollToBottom(); // 同上：流式结束后的完整渲染也要补一次滚动
     }
-    
+
     // 更新步骤
     if (aiConfig.provider === 'mock') {
       // 演示模式是确定性的：刚刚展示的就是第 mockStepIndex+1 步，直接据此推进，
@@ -2014,6 +2193,7 @@ async function generateAIReply(userQuestion) {
   } finally {
     isGenerating = false;
     document.getElementById('sendBtn').disabled = false;
+    updateScrollBtn(); // 生成结束，按钮文案从"正在生成，回到最新"恢复
   }
 }
 
@@ -2029,6 +2209,9 @@ async function typeText(element, text) {
     await new Promise(r => setTimeout(r, 15));
   }
   element.innerHTML = formatMarkdown(text);
+  // 收尾渲染会让内容变高（去掉光标、补全markdown），需要再滚一次，
+  // 否则生成结束时视图停在离底部一段距离的位置，消息末尾被截断。
+  scrollToBottom();
 }
 
 // 构建TRIZ提示词
